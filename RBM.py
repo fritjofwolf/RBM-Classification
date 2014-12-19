@@ -20,6 +20,7 @@ class RestrictedBoltzmannMachine(object):
 	# Input: trainingData - matrix of training examples, where each row represents an example
 	# 		label - vector of labels belonging to the training examples
 	def train(self, trainingData, label, learningRate):
+        
 		pass
 		
 	
