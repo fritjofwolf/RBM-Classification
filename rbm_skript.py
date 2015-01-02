@@ -1,4 +1,5 @@
 from RBM import RestrictedBoltzmannMachine as RBM
+from data import *
 import math
 import numpy as np
 
