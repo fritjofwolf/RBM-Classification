@@ -49,10 +49,10 @@ def nudge_dataset(X, Y):
     # TO DO optionally
     return (X,Y)
 
-#Plots images of MNIST data 
-def visualize(X):
-    #TO DO
-    return X
+#Plots an image of the MNIST dataset given as a binary vector 
+def visualizeMNIST(X):
+    pass
+            
 
 #Saves numpy array to csv file
 def saveData(outfile, data):
