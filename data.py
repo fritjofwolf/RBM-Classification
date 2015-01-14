@@ -1,6 +1,7 @@
 
 # Loading and preprocessing data
 
+import sys
 import numpy as np
 from sklearn.datasets import fetch_mldata
 from sklearn.preprocessing import binarize
@@ -8,6 +9,7 @@ from sklearn.preprocessing import binarize
 # Reads CSV file from a given path and returns numpy arrays of n data with or without labels
 def readData(datafile, labels=False, n=-1):
     A = np.genfromtxt(datafile, delimiter = ",", dtype = "uint8")
+    print(A.shape)
     if labels:
         if (n>-1):
             label = A[:n, 0]
@@ -23,6 +25,19 @@ def readData(datafile, labels=False, n=-1):
             trainingData = A[:] 
         return trainingData
 
+# fast reading data method for csv-file with size 60000x785
+def readDataFast(datafile):
+    test_cases = open(datafile, 'r')
+    counter = 0
+    trainingData = np.zeros((10000,785))
+    for test in test_cases:
+        trainingData[counter,:] = np.array([int(i) for i in test.split(",")]) 
+        counter += 1
+        if counter >= 10000:
+            break
+    test_cases.close()
+    return trainingData
+	
 # Load MNIST data
 def loadMNIST():
     mnist = fetch_mldata('MNIST original')
@@ -50,9 +65,13 @@ def nudge_dataset(X, Y):
     return (X,Y)
 
 #Plots an image of the MNIST dataset given as a binary vector 
-def visualizeMNIST(X):
-    pass
-            
+def visualizeMNIST(example):
+    counter = 0
+    for i in range(28):
+        for j in range(28):
+            print int(example[counter]),
+            counter += 1
+        print "\n"
 
 #Saves numpy array to csv file
 def saveData(outfile, data):

@@ -19,27 +19,35 @@ class RestrictedBoltzmannMachine(object):
 			
 	# Train the RBM using the contrastive divergence algorithm
 	# Input: trainingData - matrix of training examples, where each row represents an example
-	def train(self, trainingData, learningRate, errorThreshold):
-        	counter = 0
-        	while True:
-        		visible = trainingData[counter]
-        		hidden = np.zeros((self.NumOfHiddenUnits,1))
-        		visibleRecon = np.zeros((self.NumOfVisibleUnits,1))
-        		hiddenRecon = np.zeros((self.NumOfHiddenUnits,1))
+	def train(self, trainingData, label, classToTrain, learningRate, errorThreshold):
+		print("Start training")        	
+		counter = 0
+		error = 10000
+        	while error > errorThreshold:
+			# train RBM only with examples from one class
+			if label[counter] != classToTrain:
+				counter += 1
+				counter %= trainingData.shape[0]
+				continue
+
+        		visible = np.transpose(trainingData[counter,:])
+        		hidden = np.zeros((self.NumOfHiddenUnits))
+        		visibleRecon = np.zeros((self.NumOfVisibleUnits))
+        		hiddenRecon = np.zeros((self.NumOfHiddenUnits))
         		
         		# Gibbs-Sampling
         		for i in range(self.NumOfHiddenUnits):
-				if np.random.random() < sigmoid(self.HiddenBiases[i] + sum(visible*self.Weights[i,:])):
+				if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visible,self.Weights[:,i])):
 					hidden[i] = 1
 				else:
 					hidden[i] = 0
 			for i in range(self.NumOfVisibleUnits):
-				if np.random.random() < sigmoid(self.VisibleBiases[i] + sum(hidden*self.Weights[i,:])):
+				if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:])):
 					visibleRecon[i] = 1
 				else:
 					visibleRecon[i] = 0		
         		for i in range(self.NumOfHiddenUnits):
-				if np.random.random() < sigmoid(self.HiddenBiases[i] + sum(visibleRecon*self.Weights[i,:])):
+				if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleRecon,self.Weights[:,i])):
 					hiddenRecon[i] = 1
 				else:
 					hiddenRecon[i] = 0
@@ -51,28 +59,26 @@ class RestrictedBoltzmannMachine(object):
         		
         		# Squared-error serves as indicator for the learning progress
         		error = sum((visible-visibleRecon)**2)
-        		if error < errorThreshold:
-        			break
-        		else:
-        			print error
-        			counter += 1
-        			counter %= trainingData.shape[0]
-	
+        		if counter % 10 == 0:
+				print("Error is ", error)
+        		counter += 1
+        		counter %= trainingData.shape[0]
+		print("End training")
 	
 	# Computes sample of the learned probability distribution
 	def sample(self,numOfIteration):
 		visible = np.random.randint(0,2,self.NumOfVisibleUnits)
-		hidden = np.zeros((self.NumOfHiddenUnits,1))
+		hidden = np.zeros((self.NumOfHiddenUnits))
 		# Sample is computed by iteratively computing the activation of hidden and visible units
 		for i in range(numOfIteration):
 			for i in range(self.NumOfHiddenUnits):
-				if np.random.random() < sigmoid(self.HiddenBiases[i] + sum(visible*self.Weights[i,:])):
+				if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visible,self.Weights[:,i])):
 					hidden[i] = 1
 				else:
 					hidden[i] = 0
 					
 			for i in range(self.NumOfVisibleUnits):
-				if np.random.random() < sigmoid(self.VisibleBiases[i] + sum(hidden*self.Weights[i,:])):
+				if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:])):
 					visible[i] = 1
 				else:
 					visible[i] = 0
