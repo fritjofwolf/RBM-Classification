@@ -11,10 +11,14 @@ class RestrictedBoltzmannMachine(object):
 		self.NumOfHiddenUnits = numOfHiddenUnits
 		self.VisibleBiases = np.random.random(numOfVisibleUnits)
 		self.HiddenBiases = np.random.random(numOfHiddenUnits)
+		
+		# Initialize weight matrix
+		# Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0:01.
 		if weights != []:
 			self.Weights = weights
 		else:
-			self.Weights = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
+			#self.Weights = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
+			self.Weights = 0.01 * np.random.randn([numOfVisibleUnits, numOfHiddenUnits])
 	
 			
 	# Train the RBM using the contrastive divergence algorithm
