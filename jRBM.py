@@ -25,12 +25,12 @@ class RestrictedBoltzmannMachine(object):
 			self.WeightsVH = weightsVH
 		else:
 			#self.WeightsVH = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
-			self.WeightsVH = 0.01 * np.random.randn([numOfVisibleUnits, numOfHiddenUnits])
+			self.WeightsVH = 0.01 * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
 		if weightsTH != []: # weights between target and hidden units
 			self.WeightsTH = weightsTH
 		else:
 			#self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
-			self.WeightsVH = 0.01 * np.random.randn([numOfVisibleUnits, numOfHiddenUnits])
+			self.WeightsVH = 0.01 * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
 	
 	# TODO: ANpassen		
 	# Train the RBM using the contrastive divergence algorithm generalized to input and target

@@ -18,7 +18,7 @@ class RestrictedBoltzmannMachine(object):
 			self.Weights = weights
 		else:
 			#self.Weights = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
-			self.Weights = 0.01 * np.random.randn([numOfVisibleUnits, numOfHiddenUnits])
+			self.Weights = 0.01 * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
 	
 			
 	# Train the RBM using the contrastive divergence algorithm
