@@ -6,24 +6,27 @@ def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
 class RestrictedBoltzmannMachine(object):
-	def __init__(self, numOfVisibleUnits, numOfHiddenUnits, weights = []):
+	def __init__(self, numOfVisibleUnits, numOfHiddenUnits, weights = [], scal = 0.01, bin = True):
+        #Parameters
+        #bin:bool - if visible units are binary or normally distributed
+        #scal: float - sample initial weights from Gaussian distribution (0,scal)
+        
 		self.NumOfVisibleUnits = numOfVisibleUnits
 		self.NumOfHiddenUnits = numOfHiddenUnits
-		self.VisibleBiases = np.random.random(numOfVisibleUnits)
-		self.HiddenBiases = np.random.random(numOfHiddenUnits)
+		self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
+		self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)
 		
 		# Initialize weight matrix
-		# Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0:01.
+		# Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of scal.
 		if weights != []:
 			self.Weights = weights
 		else:
 			#self.Weights = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
-			self.Weights = 0.01 * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
-	
+			self.Weights = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
 			
 	# Train the RBM using the contrastive divergence algorithm
 	# Input: trainingData - matrix of training examples, where each row represents an example
-	def train(self, trainingData, label, classToTrain, learningRate, errorThreshold):
+	def train(self, trainingData, label, classToTrain, learningRate, errorThreshold, momentum = 0):
 		print("Start training")        	
 		counter = 0
 		error = 10000

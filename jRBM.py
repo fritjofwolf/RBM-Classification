@@ -6,7 +6,7 @@ def sigmoid(x):
   return 1 / (1 + math.exp(-x))
 
 class RestrictedBoltzmannMachine(object):
-	def __init__(self, numOfVisibleUnits, numOfHiddenUnits, numOfTargetUnits, weightsVH = [], weightsTH = []):
+	def __init__(self, numOfVisibleUnits, numOfHiddenUnits, numOfTargetUnits, weightsVH = [], weightsTH = [], scal = 0.01, bin = True):
 		self.NumOfVisibleUnits = numOfVisibleUnits
 		self.NumOfHiddenUnits = numOfHiddenUnits
 		self.NumOfTargetUnits = numOfTargetUnits
@@ -25,7 +25,7 @@ class RestrictedBoltzmannMachine(object):
 			self.WeightsVH = weightsVH
 		else:
 			#self.WeightsVH = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
-			self.WeightsVH = 0.01 * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
+			self.WeightsVH = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
 		if weightsTH != []: # weights between target and hidden units
 			self.WeightsTH = weightsTH
 		else:
