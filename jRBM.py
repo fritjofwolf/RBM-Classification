@@ -10,17 +10,27 @@ class RestrictedBoltzmannMachine(object):
 		self.NumOfVisibleUnits = numOfVisibleUnits
 		self.NumOfHiddenUnits = numOfHiddenUnits
 		self.NumOfTargetUnits = numOfTargetUnits
+		
+		#Set the visible biases to log[pi/ (1-pi)] where pi is the proportion of training vectors in which unit i is on.
 		self.VisibleBiases = np.random.random(numOfVisibleUnits)
+		
+		#Set the hidden biases to 0.
 		self.HiddenBiases = np.random.random(numOfHiddenUnits)
+		
 		self.TargetBiases = np.random.random(numOfTargetUnits)
+		
+		#Initialize weights
+		# Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0.01.
 		if weightsVH != []: # weights between visible and hidden units
 			self.WeightsVH = weightsVH
 		else:
-			self.WeightsVH = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
+			#self.WeightsVH = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
+			self.WeightsVH = 0.01 * np.random.randn([numOfVisibleUnits, numOfHiddenUnits])
 		if weightsTH != []: # weights between target and hidden units
 			self.WeightsTH = weightsTH
 		else:
-			self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
+			#self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
+			self.WeightsVH = 0.01 * np.random.randn([numOfVisibleUnits, numOfHiddenUnits])
 	
 	# TODO: ANpassen		
 	# Train the RBM using the contrastive divergence algorithm generalized to input and target
