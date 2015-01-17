@@ -5,7 +5,7 @@ import numpy as np
 import cPickle
 import gzip
 from sklearn.datasets import fetch_mldata
-from sklearn.preprocessing import binarize
+from sklearn.preprocessing import LabelBinarizer
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 
@@ -32,7 +32,7 @@ class MNIST(object):
             return trainingData
     
     # fast reading data method for csv-file with size s x f
-    def readCSVDataFast(self, datafile = 'data/mnist_train.csv', s=10000, f=785):
+    def readCSVDataFast(self, datafile = 'C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv', s=10000, f=785):
         test_cases = open(datafile, 'r')
         counter = 0
         trainingData = np.zeros((s,f))
@@ -43,7 +43,8 @@ class MNIST(object):
         test_cases.close()
         return trainingData
     
-    """Load MNIST data from pkl file
+    """
+    Load MNIST data from pkl file
     Returns a tuple containing the training data, validation data, test data
     
     Training data is tuple of two entries
@@ -55,11 +56,27 @@ class MNIST(object):
     Validation and test data have the same structure, excpet they contain
     10 000 entries
     """
-    def loadData(self, datafile = 'data/mnist.pkl.gz'):
+    def loadData(self, datafile = 'C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist.pkl.gz'):
         fil = gzip.open(datafile, 'rb')
         trainingSet, validationSet, testSet = cPickle.load(fil)
         fil.close()
         return (trainingSet, validationSet, testSet)
+    
+    """Transforms 1-column numpy array digits 0-9 into 
+    10-column np arry of binary values
+    uses sklearn LabelBinarizer facility
+    Suitable for joint probability learning binary"""
+    def transformLabel(self, trainY):
+        lb = LabelBinarizer()
+        lb.fit(trainY)
+        return lb.transform(trainY)
+    
+    """Transforms 10-column np arry of binary values into 1-column numpy array digits 0-9 
+    uses sklearn LabelBinarizer facility
+    takes LabelBinarizer fitted before as input"""
+    def inverseTransformLabel(self, binTrainY, lb):
+        return lb.inverse_transform(binTrainY)
+        
     
     """ Loads data using sklearn package fech function
     Fetch an mldata.org data set
@@ -91,8 +108,8 @@ class MNIST(object):
             print "\n"
     
     #Plots an image of the MNIST dataset given as a binary vector 
-    def plot(self, trainX):
-        plt.imshow(trainX[0].reshape((28, 28)), cmap = 'Greys')
+    def plot(self, example):
+        plt.imshow(example.reshape((28, 28)), cmap = 'Greys')
         plt.show()
 
 #Transform data into binary (black and white images) using threshold method
@@ -110,3 +127,5 @@ def scale(X):
 #Saves numpy array to csv file
 def saveData(outfile, data):
     np.savetxt(outfile, data, delimiter=",")
+    
+#def plotResults():
