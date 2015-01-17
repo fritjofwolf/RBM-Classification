@@ -33,10 +33,10 @@ class RestrictedBoltzmannMachine(object):
         error = 10000
         while error > errorThreshold:
             # train RBM only with examples from one class
-            if label[counter] != classToTrain:
-                counter += 1
-                counter %= trainingData.shape[0]
-                continue
+                if label[counter] != classToTrain:
+                    counter += 1
+                    counter %= trainingData.shape[0]
+                    continue
 
                 visible = np.transpose(trainingData[counter,:])
                 hidden = np.zeros((self.NumOfHiddenUnits))
