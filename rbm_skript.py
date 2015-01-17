@@ -1,19 +1,65 @@
-from RBM import RestrictedBoltzmannMachine as RBM
+from rbm import RestrictedBoltzmannMachine as RBM, Discriminative as DRBM
 from data import *
 import math
 import numpy as np
 
-#RBM1 = RBM(5,2)
-#print RBM1.Weights
+"""Run a test for a given dataset (classification problem)
+    and specified hyperparameters:
+        bin - if data is in binary format
+        lr - learning rate
+        scal - sampling from Gaussian distribution of 0 and scal
+        nrHiddenUnits - number of hidden units
+        nrOfIter - number of iterations
+        batch size - size of minibatch
+        ...
+"""       
 
-#Test on loading, binarizing/scaling and printing/saving MNIST train data
-#printData(binarizeH(readData("mnist_train.csv", n=100)));
-dataSet = readDataFast("mnist_train.csv")
-label = dataSet[:,0]
-trainingData = binarizeH(dataSet[:,1:])
+def runTest(data = 'MNIST',
+            read = 'pkl',
+            binary = True,
+            lr = 0.05,
+            scal = 0.01,
+            nrHiddenUnits = 100,
+            nrOfIter = 10000,
+            batch_size = 10000):
+    
+    # Case for MNIST data
+    if (data == 'MNIST'):
+        dataObj = MNIST();
+        # Case of reading from cPickle format
+        if read == 'pkl':
+            trainingSet, validationSet, testSet = dataObj.loadData()
+            trainX, trainY = trainingSet
+            #validX, validY = validationSet
+            #testX, testY = testSet
+            #case of binary data
+            if binary:
+                trainX = binarize(trainX)
+            trainX = trainX[:batch_size]
+        else:
+            #Case of reading from CSV
+            if read =='CSV':
+                dataSet = dataObj.readCSVDataFast(s=batch_size)
+                trainY = dataSet[:batch_size,0]
+                if binary:
+                    trainX = binarize(scale(dataSet[:batch_size,1:]))
+                else:
+                    trainX = scale(dataSet[:batch_size,1:])
+        nrVisibleUnits = len(trainX[1]);
+        
+        dataObj.plot(trainX);
+        #RBM1 = RBM(nrVisibleUnits, nrHiddenUnits, scal = scal, bin=bin)
+        #RBM1.train(trainX, trainY, 5, lr,5)
+        #dataObj.visualize(RBM1.sample(100))
+        #MNIST.visualize(trainingData[0,:])
 
-RBM = RBM(784,100)
-RBM.train(trainingData, label, 2, 0.05,5)
-visualizeMNIST(RBM.sample(100))
-#visualizeMNIST(trainingData[0,:])
-#saveData("out.csv", binarizeH(readData("mnist_train.csv", n=100)));
+#Check RBMs initialization
+def simpleTest():
+    RBM1 = RBM(5,2)
+    print RBM1.Weights
+    
+    DRBM1 = DRBM(5,2,2)
+    print DRBM1.Weights
+    
+runTest()
+#simpleTest()
