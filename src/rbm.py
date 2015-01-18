@@ -24,7 +24,8 @@ The conditional probability of a single variable being one can be interpreted
 as the firing rate of a (stochastic) neuron with sigmoid activation function
 """
 class RestrictedBoltzmannMachine(object):
-    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, weights = [], scal = 0.01, binary = True):
+    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, 
+                 weights = [], scal = 0.01, binary = True):
         #Parameters
         #bin:bool - if visible units are binary or normally distributed
         #scal: float - sample initial weights from Gaussian distribution (0,scal)
@@ -33,11 +34,12 @@ class RestrictedBoltzmannMachine(object):
         if rnGen is None:
             # create a number generator
             rnGen = np.random.RandomState(1234)
-        
+
         self.NumOfVisibleUnits = numOfVisibleUnits
         self.NumOfHiddenUnits = numOfHiddenUnits
         self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
         self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)
+        
         
         # Initialize weight matrix
         # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of scal.
@@ -49,11 +51,13 @@ class RestrictedBoltzmannMachine(object):
             
     # Train the RBM using the contrastive divergence algorithm
     # Input: trainingData - matrix of training examples, where each row represents an example
-    def train(self, trainingData, label, classToTrain, learningRate, errorThreshold):
+    def train(self, trainingData, label, classToTrain, learningRate, errorThreshold, 
+              stopCondition = 'errorThreshold'):
         print("Start training")            
         counter = 0
         error = 10000
         #results = [[ for i in range(10)] for j in range(10)]
+        # errorThreshold is termination condition
         while error > errorThreshold:
             # train RBM only with examples from one class
                 if label[counter] != classToTrain:
@@ -121,6 +125,7 @@ class RestrictedBoltzmannMachine(object):
 """
 Version of Restricted Boltzmann Machine that models the joint distribution of 
 inputs and target classes 
+train a joint density model using a single RBM that has two sets of visible units
 Overrides train method: uses contrastive divergence algorithm to calculate gradient
 """
 class Joint(RestrictedBoltzmannMachine):
@@ -131,7 +136,8 @@ class Joint(RestrictedBoltzmannMachine):
                                             numOfHiddenUnits,
                                             rnGen - rnGen, 
                                             scal = scal, 
-                                            binary=binary)
+                                            binary=binary,
+                                            )
         self.NumOfTargetUnits = numOfTargetUnits
         #Initialize weights
         # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0.01.
@@ -147,6 +153,13 @@ class Joint(RestrictedBoltzmannMachine):
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
             self.WeightsVH = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
         
+        
+        #Initialize weight, biases to zeros
+        self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
+        self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
+        self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
+        self.WeightsTH = np.zeros(self.WeightsTH.shape, float)
+        self.WeightsVH = np.zeros(self.WeightsVH.shape, float)
         """
         #self.NumOfVisibleUnits = numOfVisibleUnits
         #self.NumOfHiddenUnits = numOfHiddenUnits
@@ -160,27 +173,71 @@ class Joint(RestrictedBoltzmannMachine):
         """
     # TODO: ANpassen        
     """
-    Train the RBM using the contrastive divergence algorithm generalized to input and target
+    Train the RBM using the contrastive divergence sampling
     Overrides train method of base class, 
-    performs gradient estimation over mini-batches of samples
-    updated weights and biases based on estimated gradients
-    Input: batch - a subset of training data
+    performs gradient estimation over mini-batch of samples
+    Input: batch - a subset of training data, divided into X and Y (labels)
     k - number of iterations for CD algorthm
-    weightDecay - 'l2' or 'l1' method of weight penalization
+    Returns: Gradient approximation for weights, visible bias, hidden bias
     """
-    def train(self, batch, learningRate, errorThreshold, k=1, weightDecay = 'l2', momentum=0.5):
-        # calculate gradients using contrastive divergence algorithm
-        gradientW, gradientV, gradientH = self.contrastiveDivergence(batch)
+    def train(self, batchX, batchY, errorThreshold, k=1):
         
-        # TO DO
-        #Update Visible Bias
-        #self.VisibleBiases = 
-        #Update Hidden Bias
+        hidden = np.zeros((self.NumOfHiddenUnits,1))
+        #iterate over samples in a batch
+        for i in range(len(batchX)):
+            #set gradients to 0
+            gradientWVH = np.zeros(self.WeightsTH.shape, float)
+            gradientWTH = np.zeros(self.WeightsTH.shape, float)
+            gradientV= np.zeros(self.NumOfVisibleUnits, float)
+            gradientH = np.zeros(self.NumOfHiddenUnits, float)
+            #set state of visible units based on this data point
+            visibleX = batchX[i]
+            visibleY = batchY[i]
+    
+            
+            
+            #in k steps
+            for count in k:
+                #compute state for each hidden unit based on formula and visible
+                for j in range(self.NumOfHiddenUnits):
+                    pass
+                #hidden[j] =  
+                
+                #compute visible based on hidden units (reconstruction)
+                for n in range(self.NumOfVisibleUnits):
+                    pass
+                    
+                for m in range(self.NumOfTargetUnits):
+                    pass
+                #compute hidden states again
+                for j in range(self.NumOfHiddenUnits):   
+                    pass
+             
+             #compute gradientWVH, gradientWTH, gradientV, gradientH 
         
-        #Update Weights
-        
-        #Calculate Log-likelihood - as indicator for the learning progress
-        
+        #TO DO
+        return gradientWVH, gradientWTH, gradientV, gradientH 
+    """   
+   Updates weights based on gradients and learning rate
+   weightDecay - 'l2' or 'l1' method of weight penalization
+    """
+    def updateWeight(self, learningRate, gradientWVH, gradientWTH, gradientV, gradientH,
+                     weightDecay = 'l2', momentum=0.5): 
+        pass
+            # 
+           
+            #Update Visible Bias
+            #self.VisibleBiases = 
+            #Update Hidden Bias
+                    
+            #Update Weights
+            #self.WeightsVH += learningRate *     
+            #self.WeightsTH += learningRate *      
+            #Calculate Log-likelihood - as indicator for the learning progress
+            
+            #compute squared error
+                    
+                   
         """
         counter = 0
         error = 10000
@@ -242,22 +299,38 @@ class Joint(RestrictedBoltzmannMachine):
         return visible
     """
     K-step Contrastive divergence 
-    Input: training batch of Visible and Hidden Units
-    Returns: Gradient approximation for weights, visible bias, hidden bias
+    Input: training batch of Visible Units: inputs X and targets Y
+    
     """ 
-    def contrastiveDivergence(self, batch, k=1):
-       
-        #Initialize weight, biases to zeros
-        self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
-        self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
-        self.Weights = np.zeros(self.Weights.shape, float)
-        
-        #for all the visible units in batch
-        #in k steps
-        #TO DO
-        
-        
-        gradientW = 0
-        gradientV = 0
-        gradientH = 0
-        return gradientW, gradientV, gradientH   
+ 
+         
+
+"""
+Version of Restricted Boltmann Machine that:
+-is a modified version of Joint RBM version
+-uses joint probabilities to train
+-uses contrastive divergence in sampling
+Modifications
+-optimizes directly p(y|x) instead of p(y,x)
+-gradient is computed exactly, not estimated
+-implements predictClass method
+"""
+class Discriminative(Joint):
+    
+    """
+    Overrides train method in Joint
+    """
+    def train(self, visibleX, visibleY, learningRate, errorThreshold, k=1, 
+        weightDecay='l2', momentum=0.5, stopCondition='epochNumber', 
+        nrEpochs=10000):
+        pass
+            
+    """
+    Predicts class number based on input data
+    After training, each possible label is tried in turn with a test vector 
+    and the one that gives lowest free energy is chosen as the most likely class
+    """
+    def predictClass(self, inputData):
+        #TODO
+        label=0
+        return label

@@ -4,7 +4,25 @@ import os
 import math
 import numpy as np
 from time import time
+# if python < 3.4  -> pip install enum34
+from enum import Enum
 
+
+RBMType = Enum ('generative',   #model using data without labels
+                'joint',        #models joint probabilities of data and labels
+                'discriminative' #can predict classes
+                )
+
+Dataset = Enum('MNIST',
+               'CIFAR')
+
+DataType = Enum('binary',   #{0,1},
+                 'prob',     #<0;1> - for non-binary data 'normalization' is advised
+                 'real')    #any real value
+
+TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
+                             'epochNumber',        # number of iterations  
+                )
 """
     Runs a test for a given RBM model, dataset (classification problem), 
     and specified hyperparameters:
@@ -13,10 +31,12 @@ from time import time
     :param    dFormat: specifies source data format 'pkl' or 'csv'
     :param    train_size: specifies number of samples from dataset to train 
     :param    binary: if binary problem is solved 
+    :param    binarizationThreshold - a threshold for binarization of data
     :param    batch size: size of minibatch 
     :param    lr: learning rate
     :param    scal: sampling from Gaussian distribution of 0 and scal
     :param    nrHiddenUnits: number of hidden units
+    :param    nrEpochs_p: number of training epochs
     :param    nrOfIter: number of iterations for sampling
     :param    randomState: random state used for random nr generating
     :param    errorThreshold: denotes stop condition for RBM training
@@ -24,15 +44,17 @@ from time import time
 """       
 
 def runTest(
-            model = 'joint',
+            model = 'generative',
             data = 'MNIST',
             dFormat = 'pkl',
             train_size = 50000,
             binary = True,
+            binarizationThreshold = 0.5,
             batch_size = 10,
             lr = 0.05,
             scal = 0.01,
             nrHiddenUnits_p = 400,
+            nrEpochs_p = 10000,
             nrOfIter = 1000,
             randomState = 1234,
             errorThreshold = 5):
@@ -53,7 +75,7 @@ def runTest(
             testX, testY = testSet
             #case of binary data
             if binary:
-                trainX = binarize(trainX)
+                trainX = binarize(trainX, threshold = binarizationThreshold)
             trainX = trainX[:train_size]
         else:
             #Case of reading from CSV
@@ -61,7 +83,8 @@ def runTest(
                 dataSet = dataObj.readCSVDataFast(s=train_size)
                 trainY = dataSet[:train_size,0]
                 if binary:
-                    trainX = binarize(scale(dataSet[:train_size,1:]))
+                    trainX = binarize(scale(dataSet[:train_size,1:]), 
+                                      threshold = binarizationThreshold)
                 else:
                     trainX = scale(dataSet[:train_size,1:])
     # Case for CIFAR data
@@ -76,9 +99,10 @@ def runTest(
     #Initialize a chosen RBM model and perform train and sample operations
     if(model == 'generative'): 
         nrVisibleUnits = len(trainX[1]);
-        RBM1 = RBM(nrVisibleUnits, nrHiddenUnits_p, scal = scal, binary=binary, rnGen=rnGen)
+        RBM1 = RBM(nrVisibleUnits, nrHiddenUnits_p, scal = scal, binary=binary, 
+                   rnGen=rnGen)
         t1 = time() 
-        RBM1.train(trainX, trainY, 1, lr, errorThreshold)
+        RBM1.train(trainX, trainY, 5, lr, errorThreshold)
         train_time = time() - t1
         print("Read data time: %0.3fs" % read_time)
         print("Train time: %0.3fs" % train_time) 
@@ -105,14 +129,21 @@ def runTest(
         numOfBatches = trainX.shape[0] / batch_size
         print numOfBatches
         #initialize jRBM
-        jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, scal = scal, binary=binary, rnGen=rnGen)
+        jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, 
+                     scal = scal, binary=binary, rnGen=rnGen)
+        epoch = 0
+        #for each epoch 
+        while epoch < nrEpochs_p:
+            epoch += 1
         #perform training based on CD for each minibatch
-        for i in range(numOfBatches):
-            #iterate to next batch
-            #print i*batch_size
-            batch = trainX[i*batch_size:((i*batch_size)+batch_size)]
-            #perform train on this batch
-            jRBM1.train(batch, lr, errorThreshold)
+            for i in range(numOfBatches):
+                #iterate to next batch
+                #print i*batch_size
+                batchX = trainX[i*batch_size:((i*batch_size)+batch_size)]
+                batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
+                #perform train on this batch and update weights
+                jRBM1.updateWeight(lr, jRBM1.train(batchX, batchY, errorThreshold))
+        #compute error
           
 #Simple test to check RBMs initialization and inheritance
 def simpleTest():
@@ -133,6 +164,6 @@ def miscTest():
     print os.getcwd()
     print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv')
     
-#runTest();
-simpleTest();
+runTest();
+#simpleTest();
 #miscTest();
