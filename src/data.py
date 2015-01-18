@@ -32,7 +32,7 @@ class MNIST(object):
             return trainingData
     
     # fast reading data method for csv-file with size s x f
-    def readCSVDataFast(self, datafile = 'C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv', s=10000, f=785):
+    def readCSVDataFast(self, datafile = 'data\mnist_train.csv', s=10000, f=785):
         test_cases = open(datafile, 'r')
         counter = 0
         trainingData = np.zeros((s,f))
@@ -56,7 +56,7 @@ class MNIST(object):
     Validation and test data have the same structure, excpet they contain
     10 000 entries
     """
-    def loadData(self, datafile = 'C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist.pkl.gz'):
+    def loadData(self, datafile = 'data/mnist.pkl.gz'):
         fil = gzip.open(datafile, 'rb')
         trainingSet, validationSet, testSet = cPickle.load(fil)
         fil.close()
@@ -127,5 +127,21 @@ def scale(X):
 #Saves numpy array to csv file
 def saveData(outfile, data):
     np.savetxt(outfile, data, delimiter=",")
-    
-#def plotResults():
+
+# Plots a chart given np array of mswe over iterations for different models    
+def plotResults(mswe, model_selection):
+    mswe_lr1, mswe_lr2, mswe_nrH1, mswe_nrH2, mswe_nrS1, mswe_nrS2 = mswe
+    lr1,lr2, nrH1, nrH2,nrS1,nrS2   = model_selection
+    plt.figure()
+    plt.title('Convergence comparison of different models')
+    plt.plot(mswe_lr1, 'b', label='Model with learning rate=%.4f' % lr1)
+    plt.plot(mswe_lr2, 'b--', label='Model with learning rate=%.4f' % lr2)
+    plt.plot(mswe_nrH1, 'g', label='Model with nr Hidden Units=%.0f' % nrH1)
+    plt.plot(mswe_nrH2, 'g--', label='Model with nr Hidden Units=%.0f' % nrH2)
+    plt.plot(mswe_nrS1, 'r', label='Model with number of iterations for sampling =%.0f' % nrS1)
+    plt.plot(mswe_nrS2, 'r--', label='Model with number of iterations for sampling =%.0f' % nrS2)
+    plt.legend()
+    plt.grid()
+    plt.xlabel('Iterations')
+    plt.ylabel('Mean-squared weight error')
+    plt.show()

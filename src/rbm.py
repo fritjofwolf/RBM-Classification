@@ -118,23 +118,33 @@ class RestrictedBoltzmannMachine(object):
                     
         return visible
     
-# Restricted Boltzmann Machine modeling the joint distribution of inputs and target classes 
-# with hidden units, input and target classes  
-class Discriminative(RestrictedBoltzmannMachine):
-    def __init__(self, numOfVisibleUnits, numOfHiddenUnits, numOfTargetUnits, 
-                 weightsVH = [], weightsTH = [], scal = 0.01, binary = True, momentum = 0):
+"""
+Version of Restricted Boltzmann Machine that models the joint distribution of 
+inputs and target classes 
+Overrides train method: uses contrastive divergence algorithm to calculate gradient
+"""
+class Joint(RestrictedBoltzmannMachine):
+    def __init__(self, numOfVisibleUnits, numOfHiddenUnits, rnGen, weights=[],
+                 #numOfTargetUnits, weightsVH = [], weightsTH = [], 
+                  scal = 0.01, binary = True):
         RestrictedBoltzmannMachine.__init__(self, numOfVisibleUnits, 
-                                            numOfHiddenUnits, scal = scal, binary=binary)
+                                            numOfHiddenUnits,
+                                            rnGen, 
+                                            weights,
+                                            scal = scal, 
+                                            binary=binary)
+        """
         #self.NumOfVisibleUnits = numOfVisibleUnits
         #self.NumOfHiddenUnits = numOfHiddenUnits
-        self.NumOfTargetUnits = numOfTargetUnits
-        self.momentum = momentum
+        #self.NumOfTargetUnits = numOfTargetUnits
+        
         #self.VisibleBiases = np.random.random(numOfVisibleUnits)
         #self.HiddenBiases = np.random.random(numOfHiddenUnits)       
-        self.TargetBiases = np.random.random(numOfTargetUnits)
+        #self.TargetBiases = np.random.random(numOfTargetUnits)
         
         #Initialize weights
         # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0.01.
+        
         if weightsVH != []: # weights between visible and hidden units
             self.WeightsVH = weightsVH
         else:
@@ -145,20 +155,29 @@ class Discriminative(RestrictedBoltzmannMachine):
         else:
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
             self.WeightsVH = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
-    
+        """
     # TODO: ANpassen        
-    # Train the RBM using the contrastive divergence algorithm generalized to input and target
-    # Input: trainingData - matrix of training examples, where each row represents an example
-    def train(self, trainingData, learningRate, errorThreshold):
-        
-        gradientW, gradientV, gradientH = self.contrastiveDivergence(trainingData)
+    """
+    Train the RBM using the contrastive divergence algorithm generalized to input and target
+    Overrides train method of base class, 
+    performs gradient estimation over mini-batches of samples
+    updated weights and biases based on estimated gradients
+    Input: batch - a subset of training data
+    k - number of iterations for CD algorthm
+    weightDecay - 'l2' or 'l1' method of weight penalization
+    """
+    def train(self, batch, learningRate, errorThreshold, k=1, weightDecay = 'l2', momentum=0.5):
+        # calculate gradients using contrastive divergence algorithm
+        gradientW, gradientV, gradientH = self.contrastiveDivergence(batch)
         
         # TO DO
         #Update Visible Bias
-        #self.VisibleBiases += 
+        #self.VisibleBiases = 
         #Update Hidden Bias
         
         #Update Weights
+        
+        #Calculate Log-likelihood - as indicator for the learning progress
         
         """
         counter = 0
@@ -224,7 +243,7 @@ class Discriminative(RestrictedBoltzmannMachine):
     Input: training batch of Visible and Hidden Units
     Returns: Gradient approximation for weights, visible bias, hidden bias
     """ 
-    def contrastiveDivergence(self, batch):
+    def contrastiveDivergence(self, batch, k=1):
        
         #Initialize weight, biases to zeros
         self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)

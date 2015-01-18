@@ -4,38 +4,19 @@
  
  
 %Information to be included in the title page:
-\title{Sample title}
-\author{Anonymous}
-\institute{ShareLaTeX}
-\date{2014}
+\title{Classification with Restricted Boltzmann Machines}
+\subtitle{A short story}
+\author{Fritjof Wolf \\ Katarzyna Tarnowska}
+\institute{Projects in Machine Learning and AI}
+\date{2015}
+
  
  
  
 \begin{document}
+\maketitle
  
- \title[About Beamer] %optional
-{Classification with Restricted Boltzmann Machines}
- 
-\subtitle{A short story}
- 
-\author[Arthur, Doe] % (optional, for multiple authors)
-{A.~B.~Arthur\inst{1} \and J.~Doe\inst{2}}
- 
-\institute[VFU] % (optional)
-{
-  \inst{1}%
-  Faculty of Physics\\
-  Very Famous University
-  \and
-  \inst{2}%
-  Faculty of Chemistry\\
-  Very Famous University
-}
- 
-\date[VLC 2013] % (optional)
-{Very Large Conference, April 2013}
- 
-\logo{\includegraphics[height=1.5cm]{lion-logo.png}}
+\logo{\includegraphics[height=1.5cm]{TUBerlin.png}}
  
 \frame{\titlepage}
  
@@ -43,5 +24,17 @@
 \frametitle{Sample frame title}
 This is a text in first frame. This is a text in first frame. This is a text in first frame.
 \end{frame}
+
+% Some useful math equations
+
+%Energy function
+\begin{align}
+    \mathbf{E(v,h) = \sum_{i=1}^{V} \frac{(v_i - b_i^v)^2}{2\sigma_i^2} - \sum_{j=1}^{H} b_j^h h_j - \sum_{i=1}^{V} \sum_{j=1}^{H} \frac{v_i}{\sigma_i} h_j w_ij}
+\end{align}
+
+%Probability of (v,h)
+\begin{align}
+    \mathbf{p(v,h) = \frac{e^{-E(v,h)}}{\sum_x \sum_k e^{-E(x,k)}}}
+\end{align}
  
 \end{document}
