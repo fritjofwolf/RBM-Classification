@@ -124,24 +124,15 @@ inputs and target classes
 Overrides train method: uses contrastive divergence algorithm to calculate gradient
 """
 class Joint(RestrictedBoltzmannMachine):
-    def __init__(self, numOfVisibleUnits, numOfHiddenUnits, rnGen, weights=[],
-                 #numOfTargetUnits, weightsVH = [], weightsTH = [], 
+    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  numOfTargetUnits,
+                 rnGen, weightsVH = [], weightsTH = [], 
                   scal = 0.01, binary = True):
         RestrictedBoltzmannMachine.__init__(self, numOfVisibleUnits, 
                                             numOfHiddenUnits,
-                                            rnGen, 
-                                            weights,
+                                            rnGen - rnGen, 
                                             scal = scal, 
                                             binary=binary)
-        """
-        #self.NumOfVisibleUnits = numOfVisibleUnits
-        #self.NumOfHiddenUnits = numOfHiddenUnits
-        #self.NumOfTargetUnits = numOfTargetUnits
-        
-        #self.VisibleBiases = np.random.random(numOfVisibleUnits)
-        #self.HiddenBiases = np.random.random(numOfHiddenUnits)       
-        #self.TargetBiases = np.random.random(numOfTargetUnits)
-        
+        self.NumOfTargetUnits = numOfTargetUnits
         #Initialize weights
         # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0.01.
         
@@ -155,6 +146,17 @@ class Joint(RestrictedBoltzmannMachine):
         else:
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
             self.WeightsVH = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
+        
+        """
+        #self.NumOfVisibleUnits = numOfVisibleUnits
+        #self.NumOfHiddenUnits = numOfHiddenUnits
+        
+        
+        #self.VisibleBiases = np.random.random(numOfVisibleUnits)
+        #self.HiddenBiases = np.random.random(numOfHiddenUnits)       
+        #self.TargetBiases = np.random.random(numOfTargetUnits)
+        
+        
         """
     # TODO: ANpassen        
     """

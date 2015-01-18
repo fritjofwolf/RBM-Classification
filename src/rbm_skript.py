@@ -95,21 +95,22 @@ def runTest(
         trainY = dataObj.transformLabel(trainY)
         #print (trainY)[0]
         #concatenate trainX and binarized trainY into one np array
-        trainSet = np.concatenate([trainX,trainY], axis=1)
+        #trainSet = np.concatenate([trainX,trainY], axis=1)
         #print trainSet.shape
-        nrVisibleUnits = len(trainSet[1])
+        nrVisibleUnits = len(trainX[1])
+        nrTargetUnits = len(trainY[1])
         #print nrVisibleUnits
         #Nr of visible units is 784 + 10 = 794
         #split the training set into mini-batches of batch_size
-        numOfBatches = trainSet.shape[0] / batch_size
+        numOfBatches = trainX.shape[0] / batch_size
         print numOfBatches
         #initialize jRBM
-        jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, scal = scal, binary=binary, rnGen=rnGen)
+        jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, scal = scal, binary=binary, rnGen=rnGen)
         #perform training based on CD for each minibatch
         for i in range(numOfBatches):
             #iterate to next batch
             #print i*batch_size
-            batch = trainSet[i*batch_size:((i*batch_size)+batch_size)]
+            batch = trainX[i*batch_size:((i*batch_size)+batch_size)]
             #perform train on this batch
             jRBM1.train(batch, lr, errorThreshold)
           
@@ -121,8 +122,8 @@ def simpleTest():
     print RBM1.Weights
     
     # Test on inherited class
-    jRBM1 = jRBM(numOfVisibleUnits = 5, numOfHiddenUnits=2, weights=[], rnGen = 7234, 
-                 scal=0.01, binary=True)
+    jRBM1 = jRBM(numOfVisibleUnits = 5, numOfHiddenUnits=2, numOfTargetUnits = 2,
+                 rnGen = 7234, scal=0.01, binary=True)
     print jRBM1.NumOfVisibleUnits
     print jRBM1.Weights
 
@@ -132,6 +133,6 @@ def miscTest():
     print os.getcwd()
     print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv')
     
-runTest();
-#simpleTest();
+#runTest();
+simpleTest();
 #miscTest();
