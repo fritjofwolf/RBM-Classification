@@ -151,7 +151,7 @@ class Joint(RestrictedBoltzmannMachine):
             self.WeightsTH = weightsTH
         else:
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
-            self.WeightsVH = scal * np.random.randn(numOfTargetUnits, numOfHiddenUnits)
+            self.WeightsTH = scal * np.random.randn(numOfTargetUnits, numOfHiddenUnits)
         
         
         #Initialize weight, biases to zeros
