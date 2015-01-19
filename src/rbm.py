@@ -24,7 +24,7 @@ The conditional probability of a single variable being one can be interpreted
 as the firing rate of a (stochastic) neuron with sigmoid activation function
 """
 class RestrictedBoltzmannMachine(object):
-    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnStat, 
+    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, 
                  weights = [], scal = 0.01, binary = True):
         #Parameters
         #bin:bool - if visible units are binary or normally distributed
@@ -34,8 +34,6 @@ class RestrictedBoltzmannMachine(object):
         if rnGen is None:
             # create a number generator
             rnGen = np.random.RandomState(1234)
-        else:
-            rnGen = np.random.RandomState(rnStat)
 
         self.NumOfVisibleUnits = numOfVisibleUnits
         self.NumOfHiddenUnits = numOfHiddenUnits
@@ -153,26 +151,24 @@ class Joint(RestrictedBoltzmannMachine):
             self.WeightsTH = weightsTH
         else:
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
-            self.WeightsVH = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
+            self.WeightsVH = scal * np.random.randn(numOfTargetUnits, numOfHiddenUnits)
         
         
         #Initialize weight, biases to zeros
-        self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
-        self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
-        self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
-        self.WeightsTH = np.zeros(self.WeightsTH.shape, float)
-        self.WeightsVH = np.zeros(self.WeightsVH.shape, float)
-        """
+        #self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
+        #self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
+        #self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
+        #self.WeightsTH = np.zeros(self.WeightsTH.shape, float)
+        #self.WeightsVH = np.zeros(self.WeightsVH.shape, float)
+
         #self.NumOfVisibleUnits = numOfVisibleUnits
         #self.NumOfHiddenUnits = numOfHiddenUnits
         
+        #Initialize weight, biases to small numbers
+        self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
+        self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)       
+        self.TargetBiases = scal * np.random.randn(numOfTargetUnits)
         
-        #self.VisibleBiases = np.random.random(numOfVisibleUnits)
-        #self.HiddenBiases = np.random.random(numOfHiddenUnits)       
-        #self.TargetBiases = np.random.random(numOfTargetUnits)
-        
-        
-        """
     # TODO: ANpassen        
     """
     Train the RBM using the contrastive divergence sampling
@@ -195,28 +191,66 @@ class Joint(RestrictedBoltzmannMachine):
             #set state of visible units based on this data point
             visibleX = batchX[i]
             visibleY = batchY[i]
-    
-            
-            
+            visibleRecon = np.zeros((self.NumOfVisibleUnits))
+            targetRecon = np.zeros((self.NumOfTargetUnits))
+            hiddenRecon = np.zeros((self.NumOfHiddenUnits))
             #in k steps
+            # it is basiaclly Gibbs sampling for a given number of steps.
             for count in k:
-                #compute state for each hidden unit based on formula and visible
+                #compute state for each hidden based on formula and visible
+                z = 0;
                 for j in range(self.NumOfHiddenUnits):
-                    pass
-                #hidden[j] =  
-                
+                    #Use weights between hidden and target
+                    if z < self.NumOfTargetUnits:
+                        #Do sampling
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleY,self.WeightsTH[:,j])):
+                            hidden[j] = 1
+                        else:
+                            hidden[j] = 0
+                    #Use weights between hidden and visible
+                    else:
+                        #Do sampling
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j])):
+                            hidden[j] = 1
+                        else:
+                            hidden[j] = 0
+                    z =+ 1
+                     
                 #compute visible based on hidden units (reconstruction)
-                for n in range(self.NumOfVisibleUnits):
-                    pass
+                for nv in range(self.NumOfVisibleUnits):
+                    if np.random.random() < sigmoid(self.VisibleBiases[nv] + np.inner(hidden,self.WeightsVH[nv,:])):
+                        visibleRecon[nv] = 1
+                    else:
+                        visibleRecon[nv] = 0
+                        
+                #compute target based on hidden units (reconstruction)
+                for nt in range(self.NumOfTargetUnits):
+                    if np.random.random() < sigmoid(self.TargetBiases[nt] + np.inner(hidden,self.WeightsTH[nt,:])):
+                        targetRecon[nt] = 1
+                    else:
+                        targetRecon[nt] = 0
                     
-                for m in range(self.NumOfTargetUnits):
-                    pass
-                #compute hidden states again
-                for j in range(self.NumOfHiddenUnits):   
-                    pass
+                #compute hidden states again 
+                z = 0;
+                for j in range(self.NumOfHiddenUnits):
+                    #Use weights between hidden and target
+                    if z < self.NumOfTargetUnits:
+                        #Do sampling
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleY,self.WeightsTH[:,j])):
+                            hiddenRecon[j] = 1
+                        else:
+                            hiddenRecon[j] = 0
+                    #Use weights between hidden and visible
+                    else:
+                        #Do sampling
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j])):
+                            hiddenRecon[j] = 1
+                        else:
+                            hiddenRecon[j] = 0
+                    z =+ 1
              
-             #compute gradientWVH, gradientWTH, gradientV, gradientH 
-        
+            #update weights for this batch
+        #compute gradientWVH, gradientWTH, gradientV, gradientH for this batch
         #TO DO
         return gradientWVH, gradientWTH, gradientV, gradientH 
     """   
