@@ -132,6 +132,7 @@ def runTest(
         jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, 
                      scal = scal, binary=binary, rnGen=rnGen)
         epoch = 0
+        error = 0
         #for each epoch 
         while epoch < nrEpochs_p:
             epoch += 1
@@ -141,7 +142,7 @@ def runTest(
                 #print i*batch_size
                 batchX = trainX[i*batch_size:((i*batch_size)+batch_size)]
                 batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
-                #perform train on this batch and update weights
+                #perform train on this batch and update weights globally 
                 jRBM1.updateWeight(lr, jRBM1.train(batchX, batchY, errorThreshold))
         #compute error
           
