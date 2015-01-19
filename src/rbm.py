@@ -24,7 +24,7 @@ The conditional probability of a single variable being one can be interpreted
 as the firing rate of a (stochastic) neuron with sigmoid activation function
 """
 class RestrictedBoltzmannMachine(object):
-    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, 
+    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnStat, 
                  weights = [], scal = 0.01, binary = True):
         #Parameters
         #bin:bool - if visible units are binary or normally distributed
@@ -34,6 +34,8 @@ class RestrictedBoltzmannMachine(object):
         if rnGen is None:
             # create a number generator
             rnGen = np.random.RandomState(1234)
+        else:
+            rnGen = np.random.RandomState(rnStat)
 
         self.NumOfVisibleUnits = numOfVisibleUnits
         self.NumOfHiddenUnits = numOfHiddenUnits
