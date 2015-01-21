@@ -212,17 +212,21 @@ class Joint(RestrictedBoltzmannMachine):
             CDposTH += np.outer(visibleY,hidden)
             
             #in k steps
-            for step in k:
+            for step in range(k):
+                if step == 0:
+                    hid = hidden
+                else:
+                    hid = hiddenRecon
                 #compute visible based on hidden units (reconstruction)
                 for nv in range(self.NumOfVisibleUnits):
-                    if np.random.random() < sigmoid(self.VisibleBiases[nv] + np.inner(hidden,self.WeightsVH[nv,:])):
+                    if np.random.random() < sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
                         visibleRecon[nv] = 1
                     else:
                         visibleRecon[nv] = 0
                         
                 #compute target based on hidden units (reconstruction)
                 for nt in range(self.NumOfTargetUnits):
-                    if np.random.random() < sigmoid(self.TargetBiases[nt] + np.inner(hidden,self.WeightsTH[nt,:])):
+                    if np.random.random() < sigmoid(self.TargetBiases[nt] + np.inner(hid,self.WeightsTH[nt,:])):
                         targetRecon[nt] = 1
                     else:
                         targetRecon[nt] = 0
@@ -232,11 +236,10 @@ class Joint(RestrictedBoltzmannMachine):
                     #Use weights between hidden and target
                     #if z < self.NumOfTargetUnits:
                         #Do sampling
-                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])):
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleRecon,self.WeightsVH[:,j]) + np.inner(targetRecon,self.WeightsTH[:,j])):
                             hiddenRecon[j] = 1
                         else:
                             hiddenRecon[j] = 0
-                
             
             CDnegVH += np.outer(visibleRecon,hiddenRecon)
             CDnegTH += np.outer(targetRecon,hiddenRecon)
