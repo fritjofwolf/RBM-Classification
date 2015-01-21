@@ -252,8 +252,13 @@ class Joint(RestrictedBoltzmannMachine):
                             """
                     #z =+ 1
              
-            #update weights for this batch
+        #update weights for this batch
+        self.Weights += learningRate * (np.outer(visible,hidden) - np.outer(visibleRecon,hiddenRecon))
+        self.HiddenBiases += learningRate * (hidden - hiddenRecon)
+        self.VisibleBiases += learningRate * (visible - visibleRecon)
         #compute gradientWVH, gradientWTH, gradientV, gradientH for this batch
+        
+        #divide the total gradient computed on a mini-batch by the size of the mini-batch,
         #TO DO
         return gradientWVH, gradientWTH, gradientV, gradientH 
     """   
