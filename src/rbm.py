@@ -198,16 +198,17 @@ class Joint(RestrictedBoltzmannMachine):
             # it is basiaclly Gibbs sampling for a given number of steps.
             for count in k:
                 #compute state for each hidden based on formula and visible
-                z = 0;
+                #z = 0;
                 for j in range(self.NumOfHiddenUnits):
-                    #Use weights between hidden and target
-                    if z < self.NumOfTargetUnits:
+                    #Positive phase
+                    #if z < self.NumOfTargetUnits:
                         #Do sampling
-                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleY,self.WeightsTH[:,j])):
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])):
                             hidden[j] = 1
                         else:
                             hidden[j] = 0
                     #Use weights between hidden and visible
+                    """
                     else:
                         #Do sampling
                         if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j])):
@@ -215,7 +216,7 @@ class Joint(RestrictedBoltzmannMachine):
                         else:
                             hidden[j] = 0
                     z =+ 1
-                     
+                    """ 
                 #compute visible based on hidden units (reconstruction)
                 for nv in range(self.NumOfVisibleUnits):
                     if np.random.random() < sigmoid(self.VisibleBiases[nv] + np.inner(hidden,self.WeightsVH[nv,:])):
@@ -231,15 +232,16 @@ class Joint(RestrictedBoltzmannMachine):
                         targetRecon[nt] = 0
                     
                 #compute hidden states again 
-                z = 0;
+                #z = 0;
                 for j in range(self.NumOfHiddenUnits):
                     #Use weights between hidden and target
-                    if z < self.NumOfTargetUnits:
+                    #if z < self.NumOfTargetUnits:
                         #Do sampling
-                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleY,self.WeightsTH[:,j])):
+                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])):
                             hiddenRecon[j] = 1
                         else:
                             hiddenRecon[j] = 0
+                    """
                     #Use weights between hidden and visible
                     else:
                         #Do sampling
@@ -247,7 +249,8 @@ class Joint(RestrictedBoltzmannMachine):
                             hiddenRecon[j] = 1
                         else:
                             hiddenRecon[j] = 0
-                    z =+ 1
+                            """
+                    #z =+ 1
              
             #update weights for this batch
         #compute gradientWVH, gradientWTH, gradientV, gradientH for this batch
