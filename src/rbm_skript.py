@@ -142,8 +142,9 @@ def runTest(
                 #print i*batch_size
                 batchX = trainX[i*batch_size:((i*batch_size)+batch_size)]
                 batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
-                #perform train on this batch and update weights globally 
-                jRBM1.updateWeight(lr, jRBM1.train(batchX, batchY, errorThreshold))
+                #perform train on this batch and update weights globally
+                gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY = jRBM1.train(batchX, batchY, errorThreshold )
+                jRBM1.updateWeight(lr, gradientWVH, gradientWTH, gradientV, gradientT, gradientH)
         #compute error
           
 #Simple test to check RBMs initialization and inheritance
@@ -168,3 +169,4 @@ def miscTest():
 runTest();
 #simpleTest();
 #miscTest();
+
