@@ -179,44 +179,40 @@ class Joint(RestrictedBoltzmannMachine):
     Returns: Gradient approximation for weights, visible bias, hidden bias
     """
     def train(self, batchX, batchY, errorThreshold, k=1):
+        gradientWVH = np.zeros(self.WeightsVH.shape, float)
+        gradientWTH = np.zeros(self.WeightsTH.shape, float)
+        gradientV= np.zeros(self.NumOfVisibleUnits, float)
+        gradientH = np.zeros(self.NumOfHiddenUnits, float)
+        gradientT = np.zeros(self.NumOfHiddenUnits, float)
+        CDposVH = np.zeros(self.WeightsVH.shape, float)
+        CDposTH = np.zeros(self.WeightsTH.shape, float)
+        CDnegVH = np.zeros(self.WeightsVH.shape, float)
+        CDnegTH = np.zeros(self.WeightsTH.shape, float)
         
-        hidden = np.zeros((self.NumOfHiddenUnits,1))
         #iterate over samples in a batch
         for i in range(len(batchX)):
-            #set gradients to 0
-            gradientWVH = np.zeros(self.WeightsTH.shape, float)
-            gradientWTH = np.zeros(self.WeightsTH.shape, float)
-            gradientV= np.zeros(self.NumOfVisibleUnits, float)
-            gradientH = np.zeros(self.NumOfHiddenUnits, float)
             #set state of visible units based on this data point
-            visibleX = batchX[i]
-            visibleY = batchY[i]
+            visibleX = np.transpose(batchX[i,:])
+            visibleY = np.transpose(batchY[i,:])
             visibleRecon = np.zeros((self.NumOfVisibleUnits))
             targetRecon = np.zeros((self.NumOfTargetUnits))
             hiddenRecon = np.zeros((self.NumOfHiddenUnits))
+            hidden = np.zeros((self.NumOfHiddenUnits))
+
+            #compute state for each hidden based on formula and visible
+            for j in range(self.NumOfHiddenUnits):
+                #Positive phase
+                #Do sampling
+                if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])):
+                    hidden[j] = 1
+                else:
+                    hidden[j] = 0
+                    
+            CDposVH += np.outer(visibleX,hidden)
+            CDposTH += np.outer(visibleY,hidden)
+            
             #in k steps
-            # it is basiaclly Gibbs sampling for a given number of steps.
-            for count in k:
-                #compute state for each hidden based on formula and visible
-                #z = 0;
-                for j in range(self.NumOfHiddenUnits):
-                    #Positive phase
-                    #if z < self.NumOfTargetUnits:
-                        #Do sampling
-                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])):
-                            hidden[j] = 1
-                        else:
-                            hidden[j] = 0
-                    #Use weights between hidden and visible
-                    """
-                    else:
-                        #Do sampling
-                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j])):
-                            hidden[j] = 1
-                        else:
-                            hidden[j] = 0
-                    z =+ 1
-                    """ 
+            for step in k:
                 #compute visible based on hidden units (reconstruction)
                 for nv in range(self.NumOfVisibleUnits):
                     if np.random.random() < sigmoid(self.VisibleBiases[nv] + np.inner(hidden,self.WeightsVH[nv,:])):
@@ -232,7 +228,6 @@ class Joint(RestrictedBoltzmannMachine):
                         targetRecon[nt] = 0
                     
                 #compute hidden states again 
-                #z = 0;
                 for j in range(self.NumOfHiddenUnits):
                     #Use weights between hidden and target
                     #if z < self.NumOfTargetUnits:
@@ -241,45 +236,44 @@ class Joint(RestrictedBoltzmannMachine):
                             hiddenRecon[j] = 1
                         else:
                             hiddenRecon[j] = 0
-                    """
-                    #Use weights between hidden and visible
-                    else:
-                        #Do sampling
-                        if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j])):
-                            hiddenRecon[j] = 1
-                        else:
-                            hiddenRecon[j] = 0
-                            """
-                    #z =+ 1
-             
-        #update weights for this batch
-        self.Weights += learningRate * (np.outer(visible,hidden) - np.outer(visibleRecon,hiddenRecon))
-        self.HiddenBiases += learningRate * (hidden - hiddenRecon)
-        self.VisibleBiases += learningRate * (visible - visibleRecon)
-        #compute gradientWVH, gradientWTH, gradientV, gradientH for this batch
+                
+            
+            CDnegVH += np.outer(visibleX,hidden)
+            CDnegTH += np.outer(visibleY,hidden)
+
+        #compute average for batch
+        CDposVH /= len(batchX)
+        CDposTH /= len(batchX)
+    
+        CDnegVH /= len(batchX)
+        CDnegTH /= len(batchX)
+    
+        #compute gradients for this batch
+        gradientWVH = CDposVH - CDnegVH
+        gradientWTH = CDposTH - CDnegTH  
+        gradientV = visibleX - visibleRecon
+        gradientT = visibleY - targetRecon
+        gradientH = hidden - hiddenRecon      
         
-        #divide the total gradient computed on a mini-batch by the size of the mini-batch,
-        #TO DO
-        return gradientWVH, gradientWTH, gradientV, gradientH 
+        # Squared-error serves as indicator for the learning progress
+        errorX = sum((visibleX-visibleRecon)**2)
+        errorY = sum((visibleY-targetRecon)**2)
+        print errorX, errorY
+    
+        return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
+    
     """   
    Updates weights based on gradients and learning rate
    weightDecay - 'l2' or 'l1' method of weight penalization
     """
-    def updateWeight(self, learningRate, gradientWVH, gradientWTH, gradientV, gradientH,
-                     weightDecay = 'l2', momentum=0.5): 
-        pass
-            # 
-           
-            #Update Visible Bias
-            #self.VisibleBiases = 
-            #Update Hidden Bias
-                    
-            #Update Weights
-            #self.WeightsVH += learningRate *     
-            #self.WeightsTH += learningRate *      
-            #Calculate Log-likelihood - as indicator for the learning progress
-            
-            #compute squared error
+    def updateWeight(self, lR, gradientWVH, gradientWTH, gradientV, gradientH,
+                     gradientT, weightDecay = 'l2', momentum=0.5): 
+        
+        self.WeightsVH += lR * gradientWVH
+        self.WeightsTH += lR * gradientWTH
+        self.HiddenBiases += lR * gradientH
+        self.VisibleBiases += lR * gradientV
+        self.TargetBiases += lR * gradientT
                     
                    
         """
@@ -340,14 +334,7 @@ class Joint(RestrictedBoltzmannMachine):
                 else:
                     visible[i] = 0
                     
-        return visible
-    """
-    K-step Contrastive divergence 
-    Input: training batch of Visible Units: inputs X and targets Y
-    
-    """ 
- 
-         
+        return visible  
 
 """
 Version of Restricted Boltmann Machine that:
