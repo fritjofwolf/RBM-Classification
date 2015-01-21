@@ -238,8 +238,8 @@ class Joint(RestrictedBoltzmannMachine):
                             hiddenRecon[j] = 0
                 
             
-            CDnegVH += np.outer(visibleX,hidden)
-            CDnegTH += np.outer(visibleY,hidden)
+            CDnegVH += np.outer(visibleRecon,hiddenRecon)
+            CDnegTH += np.outer(targetRecon,hiddenRecon)
 
         #compute average for batch
         CDposVH /= len(batchX)
