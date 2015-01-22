@@ -256,9 +256,9 @@ class Joint(RestrictedBoltzmannMachine):
         #compute gradients for this batch
         gradientWVH = CDposVH - CDnegVH
         gradientWTH = CDposTH - CDnegTH  
-        gradientV = visibleX - visibleRecon
-        gradientT = visibleY - targetRecon
-        gradientH = hidden - hiddenRecon      
+        gradientV = (visibleX - visibleRecon).mean(axis=0)
+        gradientT = (visibleY - targetRecon).mean(axis=0)
+        gradientH = (hidden - hiddenRecon).mean(axis=0)   
         
         # Squared-error serves as indicator for the learning progress
         errorX = sum((visibleX-visibleRecon)**2)
