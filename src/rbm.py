@@ -233,8 +233,10 @@ class Joint(RestrictedBoltzmannMachine):
                     
                 #compute hidden states again 
                 for j in range(self.NumOfHiddenUnits):
-                    #Use weights between hidden and target
-                    #if z < self.NumOfTargetUnits:
+                    #For the last update of hidden units use the probability instead of stochastic binary states 
+                    if step == k-1:
+                        hiddenRecon[j] = sigmoid(self.HiddenBiases[j] + np.inner(visibleRecon,self.WeightsVH[:,j]) + np.inner(targetRecon,self.WeightsTH[:,j]))
+                    else:
                         #Do sampling
                         if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleRecon,self.WeightsVH[:,j]) + np.inner(targetRecon,self.WeightsTH[:,j])):
                             hiddenRecon[j] = 1
