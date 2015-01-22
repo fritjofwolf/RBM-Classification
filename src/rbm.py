@@ -272,6 +272,13 @@ class Joint(RestrictedBoltzmannMachine):
     def updateWeight(self, lR, gradientWVH, gradientWTH, gradientV, gradientH,
                      gradientT, weightDecay = 'l2', momentum=0.5): 
         
+        self.WeightsVH *= momentum
+        self.WeightsTH *= momentum
+        self.HiddenBiases *= momentum
+        self.VisibleBiases *= momentum
+        self.TargetBiases *= momentum
+        
+        
         self.WeightsVH += lR * gradientWVH
         self.WeightsTH += lR * gradientWTH
         self.HiddenBiases += lR * gradientH
