@@ -7,14 +7,15 @@ from time import time
 # if python < 3.4  -> pip install enum34
 from enum import Enum
 
+#Type control with enumaration
+class RBMType(Enum):
+    generative = 'generative'  #model using data without labels
+    joint =             'joint'        #models joint probabilities of data and labels
+    discriminative =  'discriminative' #can predict classes
 
-RBMType = Enum ('generative',   #model using data without labels
-                'joint',        #models joint probabilities of data and labels
-                'discriminative' #can predict classes
-                )
-
-Dataset = Enum('MNIST',
-               'CIFAR')
+class Dataset(Enum):
+    MNIST = 'MNIST'
+    CIFAR = 'CIFAR'
 
 DataType = Enum('binary',   #{0,1},
                  'prob',     #<0;1> - for non-binary data 'normalization' is advised
@@ -44,17 +45,17 @@ TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
 """       
 
 def runTest(
-            model = 'generative',
+            model = RBMType.joint.name,
             data = 'MNIST',
             dFormat = 'pkl',
-            train_size = 50000,
+            train_size = 500,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
             lr = 0.05,
             scal = 0.01,
             nrHiddenUnits_p = 400,
-            nrEpochs_p = 10000,
+            nrEpochs_p = 10,
             nrOfIter = 1000,
             randomState = 1234,
             errorThreshold = 5):
@@ -145,6 +146,11 @@ def runTest(
                 #perform train on this batch and update weights globally
                 gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY = jRBM1.train(batchX, batchY, errorThreshold )
                 jRBM1.updateWeight(lr, gradientWVH, gradientWTH, gradientV, gradientT, gradientH)
+                error += errorX
+                #print errorX
+            error /= numOfBatches
+            print "Mean squared error for epoch: %d is %0.3f" % (epoch, error)
+
         #compute error
           
 #Simple test to check RBMs initialization and inheritance
@@ -163,8 +169,9 @@ def simpleTest():
 # miscellaneous short tests   
 def miscTest():
     #Checking current working directory and relative path 
-    print os.getcwd()
-    print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv')
+    #print os.getcwd()
+    #print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv')
+    print (RBMType.generative.name)
     
 runTest();
 #simpleTest();
