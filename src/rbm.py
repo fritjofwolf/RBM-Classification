@@ -134,7 +134,7 @@ class Joint(RestrictedBoltzmannMachine):
                   scal = 0.01, binary = True):
         RestrictedBoltzmannMachine.__init__(self, numOfVisibleUnits, 
                                             numOfHiddenUnits,
-                                            rnGen - rnGen, 
+                                            rnGen = rnGen, 
                                             scal = scal, 
                                             binary=binary,
                                             )
@@ -263,8 +263,8 @@ class Joint(RestrictedBoltzmannMachine):
         # Squared-error serves as indicator for the learning progress
         errorX = sum((visibleX-visibleRecon)**2)
         errorY = sum((visibleY-targetRecon)**2)
-        print errorX, errorY
-    
+        #print errorX, error
+
         return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
     
     """   
@@ -272,13 +272,13 @@ class Joint(RestrictedBoltzmannMachine):
    weightDecay - 'l2' or 'l1' method of weight penalization
     """
     def updateWeight(self, lR, gradientWVH, gradientWTH, gradientV, gradientH,
-                     gradientT, weightDecay = 'l2', momentum=0.5): 
+                     gradientT, weightDecay = 'l2', momentum=0.0): 
         
-        self.WeightsVH *= momentum
-        self.WeightsTH *= momentum
-        self.HiddenBiases *= momentum
-        self.VisibleBiases *= momentum
-        self.TargetBiases *= momentum
+        #self.WeightsVH *= momentum
+        #self.WeightsTH *= momentum
+        #self.HiddenBiases *= momentum
+        #self.VisibleBiases *= momentum
+        #self.TargetBiases *= momentum
         
         
         self.WeightsVH += lR * gradientWVH
