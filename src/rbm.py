@@ -189,6 +189,8 @@ class Joint(RestrictedBoltzmannMachine):
         CDnegVH = np.zeros(self.WeightsVH.shape, float)
         CDnegTH = np.zeros(self.WeightsTH.shape, float)
         
+        errorX = 0
+        errorY = 0
         #iterate over samples in a batch
         for i in range(len(batchX)):
             #set state of visible units based on this data point
@@ -196,18 +198,22 @@ class Joint(RestrictedBoltzmannMachine):
             visibleY = np.transpose(batchY[i,:])
             visibleRecon = np.zeros((self.NumOfVisibleUnits))
             targetRecon = np.zeros((self.NumOfTargetUnits))
+            #visibleRecon_prob = np.zeros((self.NumOfVisibleUnits))
+            #targetRecon_prob = np.zeros((self.NumOfTargetUnits))
             hiddenRecon = np.zeros((self.NumOfHiddenUnits))
             hidden = np.zeros((self.NumOfHiddenUnits))
+            #hidden_prob = np.zeros((self.NumOfHiddenUnits))
 
             #compute state for each hidden based on formula and visible
             for j in range(self.NumOfHiddenUnits):
                 #Positive phase
                 #Do sampling
-                if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])):
+                #hidden_prob[j] = sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j]))
+                if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visibleX,self.WeightsVH[:,j]) + np.inner(visibleY,self.WeightsTH[:,j])) :
                     hidden[j] = 1
                 else:
                     hidden[j] = 0
-                    
+            # for positive phase use correlations between data and hidden         
             CDposVH += np.outer(visibleX,hidden)
             CDposTH += np.outer(visibleY,hidden)
             
@@ -219,13 +225,15 @@ class Joint(RestrictedBoltzmannMachine):
                     hid = hiddenRecon
                 #compute visible based on hidden units (reconstruction)
                 for nv in range(self.NumOfVisibleUnits):
-                    if np.random.random() < sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
+                    #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
+                    if np.random.random() <  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
                         visibleRecon[nv] = 1
                     else:
                         visibleRecon[nv] = 0
                         
                 #compute target based on hidden units (reconstruction)
                 for nt in range(self.NumOfTargetUnits):
+                    #targetRecon[nt] = sigmoid(self.TargetBiases[nt] + np.inner(hid,self.WeightsTH[nt,:]))
                     if np.random.random() < sigmoid(self.TargetBiases[nt] + np.inner(hid,self.WeightsTH[nt,:])):
                         targetRecon[nt] = 1
                     else:
@@ -245,6 +253,10 @@ class Joint(RestrictedBoltzmannMachine):
             
             CDnegVH += np.outer(visibleRecon,hiddenRecon)
             CDnegTH += np.outer(targetRecon,hiddenRecon)
+            
+            # Squared-error serves as indicator for the learning progress
+            errorX += sum((visibleX-visibleRecon)**2)
+            errorY += sum((visibleY-targetRecon)**2)
 
         #compute average for batch
         CDposVH /= len(batchX)
@@ -252,6 +264,10 @@ class Joint(RestrictedBoltzmannMachine):
     
         CDnegVH /= len(batchX)
         CDnegTH /= len(batchX)
+        
+        #compute mean error for the batch
+        errorX /= len(batchX)
+        errorY /= len(batchX)
     
         #compute gradients for this batch
         gradientWVH = CDposVH - CDnegVH
@@ -260,9 +276,6 @@ class Joint(RestrictedBoltzmannMachine):
         gradientT = (visibleY - targetRecon).mean(axis=0)
         gradientH = (hidden - hiddenRecon).mean(axis=0)   
         
-        # Squared-error serves as indicator for the learning progress
-        errorX = sum((visibleX-visibleRecon)**2)
-        errorY = sum((visibleY-targetRecon)**2)
         #print errorX, error
 
         return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
@@ -272,13 +285,13 @@ class Joint(RestrictedBoltzmannMachine):
    weightDecay - 'l2' or 'l1' method of weight penalization
     """
     def updateWeight(self, lR, gradientWVH, gradientWTH, gradientV, gradientH,
-                     gradientT, weightDecay = 'l2', momentum=0.0): 
+                     gradientT, weightDecay = 'l2', momentum=1.0): 
         
-        #self.WeightsVH *= momentum
-        #self.WeightsTH *= momentum
-        #self.HiddenBiases *= momentum
-        #self.VisibleBiases *= momentum
-        #self.TargetBiases *= momentum
+        self.WeightsVH *= momentum
+        self.WeightsTH *= momentum
+        self.HiddenBiases *= momentum
+        self.VisibleBiases *= momentum
+        self.TargetBiases *= momentum
         
         
         self.WeightsVH += lR * gradientWVH
@@ -286,67 +299,34 @@ class Joint(RestrictedBoltzmannMachine):
         self.HiddenBiases += lR * gradientH
         self.VisibleBiases += lR * gradientV
         self.TargetBiases += lR * gradientT
-                    
-                   
-        """
-        counter = 0
-        error = 10000
-        while error > errorThreshold:
-            visible = trainingData[counter]
-            #Set the hidden biases to 0
-            hidden = np.zeros((self.NumOfHiddenUnits,1))
-            visibleRecon = np.zeros((self.NumOfVisibleUnits,1))
-            hiddenRecon = np.zeros((self.NumOfHiddenUnits,1))
-                
-            # Gibbs-Sampling
-            for i in range(self.NumOfHiddenUnits):
-                if np.random.random() < sigmoid(self.HiddenBiases[i] + sum(visible*self.Weights[i,:])):
-                    hidden[i] = 1
-                else:
-                    hidden[i] = 0
-            for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + sum(hidden*self.Weights[i,:])):
-                    visibleRecon[i] = 1
-                else:
-                    visibleRecon[i] = 0        
-                for i in range(self.NumOfHiddenUnits):
-                    if np.random.random() < sigmoid(self.HiddenBiases[i] + sum(visibleRecon*self.Weights[i,:])):
-                        hiddenRecon[i] = 1
-                    else:
-                        hiddenRecon[i] = 0
-                    
-                # Update weights and biases
-                self.Weights += learningRate * (np.outer(visible,hidden) - np.outer(visibleRecon,hiddenRecon))
-                self.HiddenBiases += learningRate * (hidden - hiddenRecon)
-                self.VisibleBiases += learningRate * (visible - visibleRecon)
-                
-                # Squared-error serves as indicator for the learning progress
-                error = sum((visible-visibleRecon)**2)
-            print error
-            counter += 1
-            counter %= trainingData.shape[0]
-    """
     
     # Computes sample of the learned probability distribution
-    def sample(self,numOfIteration):
+    def sample(self,testSampleX, testSampleY,numOfIteration):
 
-        visible = np.random.randint(0,2,self.NumOfVisibleUnits)
-        hidden = np.zeros((self.NumOfHiddenUnits,1))
+        visibleX = testSampleX
+        visibleY = testSampleY
+        hidden = np.zeros((self.NumOfHiddenUnits))
         # Sample is computed by iteratively computing the activation of hidden and visible units
         for i in range(numOfIteration):
             for i in range(self.NumOfHiddenUnits):
-                if np.random.random() < sigmoid(self.HiddenBiases[i] + sum(visible*self.Weights[i,:])):
+                if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleX,self.WeightsVH[:,i])+ np.inner(visibleY,self.WeightsTH[:,i])):
                     hidden[i] = 1
                 else:
                     hidden[i] = 0
                     
             for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + sum(hidden*self.Weights[i,:])):
-                    visible[i] = 1
+                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
+                    visibleX[i] = 1
                 else:
-                    visible[i] = 0
+                    visibleX[i] = 0
+            
+            for i in range(self.NumOfTargetUnits):
+                if np.random.random() < sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:])):
+                    visibleY[i] = 1
+                else:
+                    visibleY[i] = 0
                     
-        return visible  
+        return visibleX, visibleY  
 
 """
 Version of Restricted Boltmann Machine that:

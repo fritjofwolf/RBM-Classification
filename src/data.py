@@ -69,7 +69,7 @@ class MNIST(object):
     def transformLabel(self, trainY):
         lb = LabelBinarizer()
         lb.fit(trainY)
-        return lb.transform(trainY)
+        return lb, lb.transform(trainY)
     
     """Transforms 10-column np arry of binary values into 1-column numpy array digits 0-9 
     uses sklearn LabelBinarizer facility

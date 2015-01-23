@@ -1,16 +1,19 @@
 from rbm import RestrictedBoltzmannMachine as RBM, Joint as jRBM
 from data import *
+from utils import *
 import os
 import math
 import numpy as np
 from time import time
 # if python < 3.4  -> pip install enum34
 from enum import Enum
+#sudo pip install Pillow
+from PIL import Image
 
-#Type control with enumaration
+#Type control with enumeration
 class RBMType(Enum):
     generative = 'generative'  #model using data without labels
-    joint =             'joint'        #models joint probabilities of data and labels
+    joint =     'joint'        #models joint probabilities of data and labels
     discriminative =  'discriminative' #can predict classes
 
 class Dataset(Enum):
@@ -31,6 +34,7 @@ TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
     :param    data: specifies on which dataset to run a test: 'MNIST', 'CIFAR'
     :param    dFormat: specifies source data format 'pkl' or 'csv'
     :param    train_size: specifies number of samples from dataset to train 
+    :param    test_size: specifies number of samples from dataset to test
     :param    binary: if binary problem is solved 
     :param    binarizationThreshold - a threshold for binarization of data
     :param    batch size: size of minibatch 
@@ -41,24 +45,29 @@ TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
     :param    nrOfIter: number of iterations for sampling
     :param    randomState: random state used for random nr generating
     :param    errorThreshold: denotes stop condition for RBM training
+    :param    momentum_p
+    :param    k_p - number of steps for Contrastive Divergence algorithm
         ...
 """       
 
 def runTest(
             model = RBMType.joint.name,
-            data = 'MNIST',
+            data = Dataset.MNIST.name,
             dFormat = 'pkl',
-            train_size = 500,
+            train_size = 50,
+            test_size = 100,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
             lr = 0.05,
             scal = 0.01,
             nrHiddenUnits_p = 400,
-            nrEpochs_p = 10,
+            nrEpochs_p = 100,
             nrOfIter = 1000,
             randomState = 1234,
-            errorThreshold = 5):
+            errorThreshold = 5,
+            momentum_p = 1.0,
+            k_p=1):
     
     # Generate random state
     rnGen = np.random.RandomState(randomState)
@@ -77,7 +86,11 @@ def runTest(
             #case of binary data
             if binary:
                 trainX = binarize(trainX, threshold = binarizationThreshold)
+                testX= binarize(trainX, threshold = binarizationThreshold)
             trainX = trainX[:train_size]
+            trainY = trainY[:train_size]
+            testX = testX[:test_size]
+            testY = testY[:test_size]
         else:
             #Case of reading from CSV
             if dFormat =='csv':
@@ -117,7 +130,7 @@ def runTest(
     
     if(model == 'joint'):
         #transform training labels using LabelBinarization to model joint probabilities
-        trainY = dataObj.transformLabel(trainY)
+        lb, trainY = dataObj.transformLabel(trainY)
         #print (trainY)[0]
         #concatenate trainX and binarized trainY into one np array
         #trainSet = np.concatenate([trainX,trainY], axis=1)
@@ -128,13 +141,15 @@ def runTest(
         #Nr of visible units is 784 + 10 = 794
         #split the training set into mini-batches of batch_size
         numOfBatches = trainX.shape[0] / batch_size
-        print numOfBatches
+        #print numOfBatches
         #initialize jRBM
         jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, 
                      scal = scal, binary=binary, rnGen=rnGen)
         epoch = 0
-        error = 0
+        mErrorX = 0
+        mErrorY = 0
         #for each epoch 
+        t1 = time()
         while epoch < nrEpochs_p:
             epoch += 1
         #perform training based on CD for each minibatch
@@ -144,15 +159,50 @@ def runTest(
                 batchX = trainX[i*batch_size:((i*batch_size)+batch_size)]
                 batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
                 #perform train on this batch and update weights globally
-                gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY = jRBM1.train(batchX, batchY, errorThreshold )
-                jRBM1.updateWeight(lr, gradientWVH, gradientWTH, gradientV, gradientT, gradientH)
-                error += errorX
-                #print errorX
-            error /= numOfBatches
-            print "Mean squared error for epoch: %d is %0.3f" % (epoch, error)
+                gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY = jRBM1.train(batchX, batchY, errorThreshold, k=k_p )
+                jRBM1.updateWeight(lr, gradientWVH, gradientWTH, gradientV, gradientT, gradientH,
+                                   momentum = momentum_p)
+                mErrorX += errorX
+                mErrorY += errorY
+            train_time = time()-t1
+            #print mean error on data and labels
+            mErrorX /= numOfBatches
+            mErrorY /= numOfBatches
+            print "MSE for epoch %d: on data: %0.3f, on label:%0.3f, time: %0.2f seconds" \
+            % (epoch, mErrorX, mErrorY, time()-t1)
+        train_time =  time()-t1
+        print "Train time: %0.3fs" % train_time
+       
+        # Plot filters after training 
+        # Construct image from the weight matrix
+        image = Image.fromarray(
+            tile_raster_images(
+                X=jRBM1.WeightsVH.T,
+                img_shape=(28, 28),
+                tile_shape=(10, 10),
+                tile_spacing=(1, 1)
+            )
+        )
+        image.show()
 
-        #compute error
-          
+        
+        dataObj.plot(testX[1])
+        # In a test set original labels corresponding to the original data are not correct !!!
+        #print "Original label: %d" % testY[1]
+        lb2, testY = dataObj.transformLabel(testY)
+        t2=time()
+        reconstructedX, reconstructedY = jRBM1.sample(testX[1], testY[1], nrOfIter)
+        sample_time = time() - t2
+        print("Sampling time: %0.3fs" % sample_time) 
+        dataObj.plot(reconstructedX)
+        #label = dataObj.inverseTransformLabel(reconstructedY,lb2)
+        #print "Reconstructed label: %d" % label
+        print "Reconstructed label:"
+        for i in range(len(reconstructedY)):
+            if reconstructedY[i] == 1:
+                print i
+        
+  
 #Simple test to check RBMs initialization and inheritance
 def simpleTest():
     #Test on basic RBM model
@@ -173,6 +223,11 @@ def miscTest():
     #print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv')
     print (RBMType.generative.name)
     
+
+def plotResults():
+    pass
+
+
 runTest();
 #simpleTest();
 #miscTest();
