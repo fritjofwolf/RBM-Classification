@@ -285,14 +285,19 @@ class Joint(RestrictedBoltzmannMachine):
    weightDecay - 'l2' or 'l1' method of weight penalization
     """
     def updateWeight(self, lR, gradientWVH, gradientWTH, gradientV, gradientH,
-                     gradientT, weightDecay = 'l2', momentum=1.0): 
+                     gradientT, weightDecay = 'l2', momentum=1.0, l2= 0.0): 
         
-        self.WeightsVH *= momentum
-        self.WeightsTH *= momentum
-        self.HiddenBiases *= momentum
-        self.VisibleBiases *= momentum
-        self.TargetBiases *= momentum
+        gradientWVH *= 1 -momentum
+        gradientWTH *= 1 -momentum
+        gradientH *= 1 -momentum
+        gradientV *= 1 -momentum
+        gradientT *= 1 -momentum  
         
+        gradientWVH += momentum * (gradientWVH - l2*self.WeightsVH)
+        gradientWTH += momentum * (gradientWTH - l2*self.WeightsTH)
+        gradientH += momentum * (gradientH - l2*self.HiddenBiases)
+        gradientV += momentum * (gradientV - l2*self.VisibleBiases)
+        gradientT += momentum  * (gradientT - l2*self.TargetBiases) 
         
         self.WeightsVH += lR * gradientWVH
         self.WeightsTH += lR * gradientWTH
@@ -300,11 +305,16 @@ class Joint(RestrictedBoltzmannMachine):
         self.VisibleBiases += lR * gradientV
         self.TargetBiases += lR * gradientT
     
-    # Computes sample of the learned probability distribution
-    def sample(self,testSampleX, testSampleY,numOfIteration):
+    """
+    Computes sample of a label given data (image)
+    The label corresponding to an input image is obtained by fixing the visible variables
+    corresponding to the image and then sampling the remaining visible variables corresponding to the labels from
+    the joined probability distribution of images and labels modeled by the RBM
+    """
+    def sample(self,testSampleX, numOfIteration):
 
         visibleX = testSampleX
-        visibleY = testSampleY
+        visibleY = np.zeros((self.NumOfTargetUnits))
         hidden = np.zeros((self.NumOfHiddenUnits))
         # Sample is computed by iteratively computing the activation of hidden and visible units
         for i in range(numOfIteration):
@@ -326,7 +336,23 @@ class Joint(RestrictedBoltzmannMachine):
                 else:
                     visibleY[i] = 0
                     
-        return visibleX, visibleY  
+        return visibleY  
+    
+    """
+    Performs classification on given dataset
+    uses sample method
+    return predicted labels
+    """
+    def predict(self,testsetX, numOfIteration):
+        labels = np.zeros(len(testsetX))
+        print testsetX.shape
+        for i in range(len(testsetX)):
+            reconY = self.sample(testsetX[i],numOfIteration = numOfIteration)
+            for j in range(len(reconY)):
+                if reconY[j] == 1:
+                    labels[i] = j  
+                    #print labels[i]  
+        return labels
 
 """
 Version of Restricted Boltmann Machine that:

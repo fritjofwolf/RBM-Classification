@@ -1,6 +1,6 @@
 from rbm import RestrictedBoltzmannMachine as RBM, Joint as jRBM
 from data import *
-from utils import *
+from utils import tile_raster_images
 import os
 import math
 import numpy as np
@@ -8,7 +8,10 @@ from time import time
 # if python < 3.4  -> pip install enum34
 from enum import Enum
 #sudo pip install Pillow
-from PIL import Image
+try:
+    import PIL.Image as Image
+except ImportError:
+    import Image
 
 #Type control with enumeration
 class RBMType(Enum):
@@ -39,14 +42,14 @@ TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
     :param    binarizationThreshold - a threshold for binarization of data
     :param    batch size: size of minibatch 
     :param    lr: learning rate
-    :param    scal: sampling from Gaussian distribution of 0 and scal
+    :param    scal: sampling from Gaussian distribution with mean=0 and std var = scal
     :param    nrHiddenUnits: number of hidden units
     :param    nrEpochs_p: number of training epochs
     :param    nrOfIter: number of iterations for sampling
     :param    randomState: random state used for random nr generating
     :param    errorThreshold: denotes stop condition for RBM training
     :param    momentum_p
-    :param    k_p - number of steps for Contrastive Divergence algorithm
+    :param    CDk_p: number of Gibbs step used by contrastive divergence 
         ...
 """       
 
@@ -55,19 +58,19 @@ def runTest(
             data = Dataset.MNIST.name,
             dFormat = 'pkl',
             train_size = 50,
-            test_size = 100,
+            test_size = 10,
             binary = True,
             binarizationThreshold = 0.5,
-            batch_size = 10,
-            lr = 0.05,
+            batch_size = 5,
+            lr = 0.5,
             scal = 0.01,
-            nrHiddenUnits_p = 400,
+            nrHiddenUnits_p = 500,
             nrEpochs_p = 100,
             nrOfIter = 1000,
             randomState = 1234,
             errorThreshold = 5,
-            momentum_p = 1.0,
-            k_p=1):
+            momentum_p = 0.0,
+            CDk_p=1):
     
     # Generate random state
     rnGen = np.random.RandomState(randomState)
@@ -87,10 +90,13 @@ def runTest(
             if binary:
                 trainX = binarize(trainX, threshold = binarizationThreshold)
                 testX= binarize(trainX, threshold = binarizationThreshold)
+                validX= binarize(validX, threshold = binarizationThreshold)
             trainX = trainX[:train_size]
             trainY = trainY[:train_size]
             testX = testX[:test_size]
             testY = testY[:test_size]
+            validX = validX[:test_size]
+            validY = validY[:test_size]
         else:
             #Case of reading from CSV
             if dFormat =='csv':
@@ -148,9 +154,11 @@ def runTest(
         epoch = 0
         mErrorX = 0
         mErrorY = 0
+        mEs = np.zeros(nrEpochs_p+1)
         #for each epoch 
         t1 = time()
         while epoch < nrEpochs_p:
+            t2 = time()
             epoch += 1
         #perform training based on CD for each minibatch
             for i in range(numOfBatches):
@@ -159,19 +167,33 @@ def runTest(
                 batchX = trainX[i*batch_size:((i*batch_size)+batch_size)]
                 batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
                 #perform train on this batch and update weights globally
-                gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY = jRBM1.train(batchX, batchY, errorThreshold, k=k_p )
-                jRBM1.updateWeight(lr, gradientWVH, gradientWTH, gradientV, gradientT, gradientH,
-                                   momentum = momentum_p)
-                mErrorX += errorX
-                mErrorY += errorY
-            train_time = time()-t1
+                gWVH, gWTH, gV, gT, gH, eX, eY = jRBM1.train(batchX, batchY, errorThreshold, k=CDk_p )
+                jRBM1.updateWeight(lr, gWVH, gWTH, gV, gT, gH ,momentum = momentum_p)
+                mErrorX += eX
+                mErrorY += eY
+            train_time = time()-t2
             #print mean error on data and labels
             mErrorX /= numOfBatches
+            mEs[epoch] = mErrorX
             mErrorY /= numOfBatches
-            print "MSE for epoch %d: on data: %0.3f, on label:%0.3f, time: %0.2f seconds" \
-            % (epoch, mErrorX, mErrorY, time()-t1)
+            print "MSE for epoch %d: on data: %0.3f, epoch time: %0.2f seconds" \
+            % (epoch, mErrorX, time()-t2)
         train_time =  time()-t1
         print "Train time: %0.3fs" % train_time
+        
+        #Use return if plotResult function is called
+        #return mEs
+        """
+        #Plot mean squared error on data within epochs
+        plt.figure()
+        plt.title('Mean squared error for epochs')
+        plt.plot(mEs, 'b', label='Model with learning rate=%.4f' % lr)
+        plt.legend()
+        plt.grid()
+        plt.xlabel('Epoch')
+        plt.ylabel('Mean-squared weight error')
+        plt.xlim(xmin=1)
+        plt.show()
        
         # Plot filters after training 
         # Construct image from the weight matrix
@@ -185,16 +207,17 @@ def runTest(
         )
         image.show()
 
-        
-        dataObj.plot(testX[1])
-        # In a test set original labels corresponding to the original data are not correct !!!
-        #print "Original label: %d" % testY[1]
-        lb2, testY = dataObj.transformLabel(testY)
+        #Do sampling for one case of unseen data
+        dataObj.plot(validX[0])
+        print "Original label: %d" % validY[0]
+        dataObj.plot(validX[2])
+        print "Original label: %d" % validY[2]
+        lb2, validY = dataObj.transformLabel(validY)
         t2=time()
-        reconstructedX, reconstructedY = jRBM1.sample(testX[1], testY[1], nrOfIter)
+        reconstructedY = jRBM1.sample(validX[0], nrOfIter)
         sample_time = time() - t2
         print("Sampling time: %0.3fs" % sample_time) 
-        dataObj.plot(reconstructedX)
+        #dataObj.plot(reconstructedX)
         #label = dataObj.inverseTransformLabel(reconstructedY,lb2)
         #print "Reconstructed label: %d" % label
         print "Reconstructed label:"
@@ -202,7 +225,32 @@ def runTest(
             if reconstructedY[i] == 1:
                 print i
         
-  
+        reconstructedY = jRBM1.sample(validX[2], nrOfIter)
+        print "Reconstructed label:"
+        for i in range(len(reconstructedY)):
+            if reconstructedY[i] == 1:
+                print i
+            
+        #Compute classification error
+        #lb2, validY = dataObj.transformLabel(validY)
+        #for i in range(len(validX[0:3])):
+            #dataObj.plot(validX[i])
+        t3=time()
+        label = jRBM1.predict(validX,numOfIteration=nrOfIter)
+        predict_time = time()-t3
+        #count how many had wrong predicted label
+        #also is wrong if more than one classes are predicted
+        counter = 0
+        for i in range(len(label)):
+            print "Reconstrlabel is %f, original label is%f" % (label[i],validY[i]) 
+            if label[i] != validY[i]:
+                counter +=1
+        acc = 1 - (counter / float(len(label)))
+        print counter / float(len(label))
+        print counter
+        print "Accuracy is %0.3f" % acc
+        print "Prediction time is %0.3fs" % predict_time
+      """ 
 #Simple test to check RBMs initialization and inheritance
 def simpleTest():
     #Test on basic RBM model
@@ -224,11 +272,42 @@ def miscTest():
     print (RBMType.generative.name)
     
 
-def plotResults():
-    pass
+def plotResults(lr1 = 0.5,momentum = 0.5, 
+                nrH1 = 700, nrH2 = 300,
+                seed1 = 9999, batch_size = 5,
+                CDk1=2, CDk2 = 3,
+                nr_epochs = 100):
+    
+    plt.figure()
+    plt.title('Convergence comparison of different models')
+    mswe_base = runTest(nrEpochs_p = nr_epochs)
+    plt.plot(mswe_base, 'k', label='Base model')
+    mswe_lr1 = runTest(lr=lr1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_lr1, 'b', label='Model with learning rate=%.1f' % lr1)
+    mswe_mom1 = runTest(momentum_p = momentum, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_mom1, 'b--', label='Model with momentum=%.1f' % momentum)
+    mswe_nrH1=runTest(nrHiddenUnits_p=nrH1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_nrH1, 'g', label='Model with %d Hidden Units' % nrH1)
+    mswe_nrH2=runTest(nrHiddenUnits_p=nrH2, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_nrH2, 'g--', label='Model with %d Hidden Units' % nrH2)
+    mswe_nrS1 = runTest(randomState=seed1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_nrS1, 'r', label='Model with random state =%d' % seed1)
+    mswe_nrS2 = runTest(batch_size =batch_size , nrEpochs_p = nr_epochs)
+    plt.plot(mswe_nrS2, 'r--', label='Model with batch size =%d' % batch_size)
+    mswe_CDk1 = runTest(CDk_p = CDk1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_CDk1, 'm', label='Model with %d-step contrastive divergence' % CDk1)
+    mswe_CDk2 = runTest(CDk_p=CDk2, nrEpochs_p = nr_epochs)
+    plt.plot(mswe_CDk2, 'm--', label='Model with %d-step contrastive divergence'  % CDk2 )
 
+    plt.legend(loc="best")
+    plt.grid()
+    plt.xlabel('Epoch')
+    plt.ylabel('Mean-squared error on data')
+    plt.xlim(xmin=1)
+    plt.show()
 
 runTest();
 #simpleTest();
 #miscTest();
+#plotResults()
 

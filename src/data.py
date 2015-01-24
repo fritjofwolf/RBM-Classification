@@ -111,6 +111,10 @@ class MNIST(object):
     def plot(self, example):
         plt.imshow(example.reshape((28, 28)), cmap = 'Greys')
         plt.show()
+    
+    #Plots multiple images of MNIsT dataset in a 10x10 table    
+    def plot10x10(self, examples):
+        pass
 
 #Transform data into binary (black and white images) using threshold method
 def binarize(X, threshold = 0.5):
