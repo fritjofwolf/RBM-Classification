@@ -57,12 +57,12 @@ def runTest(
             model = RBMType.joint.name,
             data = Dataset.MNIST.name,
             dFormat = 'pkl',
-            train_size = 50,
-            test_size = 10,
+            train_size = 10000,
+            test_size = 1000,
             binary = True,
             binarizationThreshold = 0.5,
-            batch_size = 5,
-            lr = 0.5,
+            batch_size = 10,
+            lr = 0.05,
             scal = 0.01,
             nrHiddenUnits_p = 500,
             nrEpochs_p = 100,
@@ -136,7 +136,7 @@ def runTest(
     
     if(model == 'joint'):
         #transform training labels using LabelBinarization to model joint probabilities
-        lb, trainY = dataObj.transformLabel(trainY)
+        trainY = dataObj.transformLabel(trainY)
         #print (trainY)[0]
         #concatenate trainX and binarized trainY into one np array
         #trainSet = np.concatenate([trainX,trainY], axis=1)
@@ -208,29 +208,37 @@ def runTest(
         image.show()
 
         #Do sampling for one case of unseen data
-        dataObj.plot(validX[0])
+        #dataObj.plot(validX[0])
         print "Original label: %d" % validY[0]
-        dataObj.plot(validX[2])
+        #dataObj.plot(validX[2])
         print "Original label: %d" % validY[2]
-        lb2, validY = dataObj.transformLabel(validY)
+        #validY = dataObj.transformLabel(validY)
         t2=time()
         reconstructedY = jRBM1.sample(validX[0], nrOfIter)
+        print reconstructedY
+        #print reconstructedY.argmax(axis=0)
         sample_time = time() - t2
         print("Sampling time: %0.3fs" % sample_time) 
         #dataObj.plot(reconstructedX)
-        #label = dataObj.inverseTransformLabel(reconstructedY,lb2)
-        #print "Reconstructed label: %d" % label
-        print "Reconstructed label:"
-        for i in range(len(reconstructedY)):
-            if reconstructedY[i] == 1:
-                print i
+        label = dataObj.inverseTransformLabel(reconstructedY)
+        #label = reconstructedY.argmax(axis=0)
+        print "Reconstructed label: %d" % label
+        #print "Reconstructed label:"
         
+        #for i in range(len(reconstructedY)):
+            #if reconstructedY[i] == 1:
+                #print i
+       
         reconstructedY = jRBM1.sample(validX[2], nrOfIter)
         print "Reconstructed label:"
-        for i in range(len(reconstructedY)):
-            if reconstructedY[i] == 1:
-                print i
-            
+        print reconstructedY
+        label = dataObj.inverseTransformLabel(reconstructedY)
+        #print label
+        print "Reconstructed label: %d" % label
+        #for i in range(len(reconstructedY)):
+            #if reconstructedY[i] == 1:
+                #print i
+        """  
         #Compute classification error
         #lb2, validY = dataObj.transformLabel(validY)
         #for i in range(len(validX[0:3])):
@@ -240,6 +248,9 @@ def runTest(
         predict_time = time()-t3
         #count how many had wrong predicted label
         #also is wrong if more than one classes are predicted
+        #trainY = dataObj.
+        #trainY = dataObj.inverseTransformLabel(trainY, set=True)
+        #print trainY
         counter = 0
         for i in range(len(label)):
             print "Reconstrlabel is %f, original label is%f" % (label[i],validY[i]) 
@@ -250,7 +261,7 @@ def runTest(
         print counter
         print "Accuracy is %0.3f" % acc
         print "Prediction time is %0.3fs" % predict_time
-      """ 
+
 #Simple test to check RBMs initialization and inheritance
 def simpleTest():
     #Test on basic RBM model

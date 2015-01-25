@@ -317,26 +317,64 @@ class Joint(RestrictedBoltzmannMachine):
         visibleY = np.zeros((self.NumOfTargetUnits))
         hidden = np.zeros((self.NumOfHiddenUnits))
         # Sample is computed by iteratively computing the activation of hidden and visible units
-        for i in range(numOfIteration):
+        for j in range(numOfIteration):
             for i in range(self.NumOfHiddenUnits):
                 if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleX,self.WeightsVH[:,i])+ np.inner(visibleY,self.WeightsTH[:,i])):
                     hidden[i] = 1
                 else:
                     hidden[i] = 0
-                    
+            """        
             for i in range(self.NumOfVisibleUnits):
                 if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
                     visibleX[i] = 1
                 else:
                     visibleX[i] = 0
-            
+           """ 
             for i in range(self.NumOfTargetUnits):
-                if np.random.random() < sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:])):
-                    visibleY[i] = 1
+                if j == numOfIteration-1:
+                    visibleY[i] = sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:]))
                 else:
-                    visibleY[i] = 0
-                    
+                    if np.random.random() < sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:])):
+                        visibleY[i] = 1
+                    else:
+                        visibleY[i] = 0  
         return visibleY  
+    
+    """
+    Variation of sample methods which tests probability for given data input
+    against given label input
+    returns probabilities
+    """
+    #TODO
+    def sampleAgainst(self,testSampleX, testSampleY, numOfIteration):
+
+        visibleX = testSampleX
+        visibleY = testSampleY
+        hidden = np.zeros((self.NumOfHiddenUnits))
+        # Sample is computed by iteratively computing the activation of hidden and visible units
+        for j in range(numOfIteration):
+            for i in range(self.NumOfHiddenUnits):
+                if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleX,self.WeightsVH[:,i])+ np.inner(visibleY,self.WeightsTH[:,i])):
+                    hidden[i] = 1
+                else:
+                    hidden[i] = 0
+                   
+            for i in range(self.NumOfVisibleUnits):
+                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
+                    visibleX[i] = 1
+                else:
+                    visibleX[i] = 0
+           
+            for i in range(self.NumOfTargetUnits):
+                if j == numOfIteration-1:
+                    visibleY[i] = sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:]))
+                else:
+                    if np.random.random() < sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:])):
+                        visibleY[i] = 1
+                    else:
+                        visibleY[i] = 0  
+                    
+        return visibleY 
     
     """
     Performs classification on given dataset
@@ -348,10 +386,12 @@ class Joint(RestrictedBoltzmannMachine):
         print testsetX.shape
         for i in range(len(testsetX)):
             reconY = self.sample(testsetX[i],numOfIteration = numOfIteration)
-            for j in range(len(reconY)):
-                if reconY[j] == 1:
-                    labels[i] = j  
-                    #print labels[i]  
+            #for j in range(len(reconY)):
+                #if reconY[j] == 1:
+                    #labels[i] = j  
+                    #print labels[i] 
+            #returns label that has the highest prob
+            labels[i] = reconY.argmax(axis=0) 
         return labels
 
 """

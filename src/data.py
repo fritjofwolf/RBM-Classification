@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 
 
 class MNIST(object):
-
+    def __init__(self):
+        self.labelBin = None
 # Reads CSV file from a given path and returns numpy arrays of n data with or without labels
     def readCSVData(self, datafile ='data/mnist_train.csv', labels=False, n=-1):
         A = np.genfromtxt(datafile, delimiter = ",", dtype = "uint8")
@@ -67,15 +68,19 @@ class MNIST(object):
     uses sklearn LabelBinarizer facility
     Suitable for joint probability learning binary"""
     def transformLabel(self, trainY):
-        lb = LabelBinarizer()
-        lb.fit(trainY)
-        return lb, lb.transform(trainY)
+        self.labelBin = LabelBinarizer()
+        self.labelBin.fit(trainY)
+        return self.labelBin.transform(trainY)
     
     """Transforms 10-column np arry of binary values into 1-column numpy array digits 0-9 
     uses sklearn LabelBinarizer facility
     takes LabelBinarizer fitted before as input"""
-    def inverseTransformLabel(self, binTrainY, lb):
-        return lb.inverse_transform(binTrainY)
+    def inverseTransformLabel(self, binTrainY, set=False):
+        #return self.labelBin.inverse_transform(binTrainY, threshold = 0)
+        if set:
+            return binTrainY.argmax(axis=1)
+        else:
+            return binTrainY.argmax(axis=0)
         
     
     """ Loads data using sklearn package fech function
