@@ -94,6 +94,18 @@ class MNIST(object):
         X = np.asarray(trainingData, 'float32')
         return (label, X)
     
+    """ Loads data from the CIFAR data set which can be downloaded under
+    http://www.cs.toronto.edu/~kriz/cifar.html
+    This data set consists of 60000 32x32 RGB images which belong
+    to one of 10 classes
+    Returns a dictonary containing the data and the labels
+    """
+    def loadCIFAR(self,file):
+	    fo = open(file, 'rb')
+	    dict = cPickle.load(fo)
+	    fo.close()
+	    return dict
+
     #Print data from np array
     def printData(self,td):
         print 'MNIST data:', td
@@ -154,3 +166,29 @@ def plotResults(mswe, model_selection):
     plt.xlabel('Iterations')
     plt.ylabel('Mean-squared weight error')
     plt.show()
+
+
+""" Loads data from the CIFAR data set which can be downloaded under
+http://www.cs.toronto.edu/~kriz/cifar.html
+This data set consists of 60000 32x32 RGB images which belong
+to one of 10 classes
+Returns a dictonary containing the data and the labels
+"""
+def loadCIFAR(file):
+    fo = open(file, 'rb')
+    dict = cPickle.load(fo)
+    fo.close()
+    return dict
+
+#Plots an image of the MNIST dataset given as a binary vector 
+def plot(example):
+    plt.imshow(example)
+    plt.show()
+
+# Changes the shape of the given array and swaps some indices in order 
+# to plot the CIFAR image
+def converse(array):
+	B = np.zeros((1024,3))
+	for i in range(1024):
+		B[i,:] = [array[i],array[i+1024],array[i+2048]]
+	return B.reshape(32,32,3)
