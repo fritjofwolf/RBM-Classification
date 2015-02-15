@@ -190,6 +190,5 @@ def plotCIFAR(example):
 	A = np.zeros((1024,3))
 	for i in range(1024):
 		A[i,:] = [example[i],example[i+1024],example[i+2048]]
-	
-    plt.imshow(A.reshape(32,32,3))
-    plt.show()
+	plt.imshow(A.reshape(32,32,3))
+	plt.show()

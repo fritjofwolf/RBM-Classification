@@ -1,8 +1,18 @@
+import numpy as np
+import math
+
+def sigmoid(x):
+	if x < -100:
+		return 0
+	if x > 100:
+		return 1
+	return 1 / (1 + math.exp(-x))
+    
 # Model of a RBM whose visible units are binomial units, i.e. they can 
 # model an integer between 0 and N
 class BinomialRestrictedBoltzmannMachine(object):
     def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, 
-                 weights = [], scal = 0.01, binary = True):
+                 weights = [], scal = 0.01):
         #Parameters
         #bin:bool - if visible units are binary or normally distributed
         #scal: float - sample initial weights from Gaussian distribution (0,scal)
@@ -60,10 +70,11 @@ class BinomialRestrictedBoltzmannMachine(object):
                 # 0 and 255. The probability p is computed only once and then
                 # the value is computed by simultating 256 units 
                 for i in range(self.NumOfVisibleUnits):
-					p = self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:])
+					p = sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:]))
+					#print p
 					A = np.random.rand(256)
-                    visibleRecon[i] = sum(A < p)
-                          
+					visibleRecon[i] = sum(A < p)
+					#print(visibleRecon[i],p)
                 for i in range(self.NumOfHiddenUnits):
                     if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleRecon,self.Weights[:,i])):
                         hiddenRecon[i] = 1
@@ -76,9 +87,11 @@ class BinomialRestrictedBoltzmannMachine(object):
                 self.VisibleBiases += learningRate * (visible - visibleRecon)
                 
                 # Squared-error serves as indicator for the learning progress
-                error = sum((visible-visibleRecon)**2)
-                if counter % 10 == 0:
-                    print("Error is ", error)
+                error = sum(abs(visible-visibleRecon))
+                #print("Hidden biases ", self.HiddenBiases)
+                #print("Visible biases ", self.VisibleBiases)
+                #print("Weights are ", self.Weights)
+                print("Error is ", error)
                 counter += 1
                 counter %= trainingData.shape[0]
         print("End training")
