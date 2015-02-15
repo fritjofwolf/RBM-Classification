@@ -181,14 +181,15 @@ def loadCIFAR(file):
     return dict
 
 #Plots an image of the MNIST dataset given as a binary vector 
-def plot(example):
-    plt.imshow(example)
+def plotCIFAR(example):
+    plt.imshow(example.reshape(32,32), cmap = 'greys')
     plt.show()
 
-# Changes the shape of the given array and swaps some indices in order 
-# to plot the CIFAR image
-def converse(array):
-	B = np.zeros((1024,3))
+#Plots an image of the CIFAR dataset given as a binary vector 
+def plotCIFAR(example):
+	A = np.zeros((1024,3))
 	for i in range(1024):
-		B[i,:] = [array[i],array[i+1024],array[i+2048]]
-	return B.reshape(32,32,3)
+		A[i,:] = [example[i],example[i+1024],example[i+2048]]
+	
+    plt.imshow(A.reshape(32,32,3))
+    plt.show()
