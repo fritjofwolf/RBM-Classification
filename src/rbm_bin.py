@@ -73,7 +73,7 @@ class BinomialRestrictedBoltzmannMachine(object):
 					p = sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:]))
 					#print p
 					A = np.random.rand(256)
-					visibleRecon[i] = sum(A < p)
+					visibleRecon[i] = sum(A <p)
 					#print(visibleRecon[i],p)
                 for i in range(self.NumOfHiddenUnits):
                     if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleRecon,self.Weights[:,i])):

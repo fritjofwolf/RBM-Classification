@@ -31,9 +31,9 @@ class RestrictedBoltzmannMachine(object):
         #scal: float - sample initial weights from Gaussian distribution (0,scal)
         
         #initialize random number generator
-        if rnGen is None:
+        #if rnGen is None:
             # create a number generator
-            rnGen = np.random.RandomState(1234)
+            #rnGen = np.random.RandomState(1234)
 
         self.NumOfVisibleUnits = numOfVisibleUnits
         self.NumOfHiddenUnits = numOfHiddenUnits
@@ -55,20 +55,21 @@ class RestrictedBoltzmannMachine(object):
               stopCondition = 'errorThreshold'):
         print("Start training")            
         counter = 0
+        counterExamples = 0
+        average_error_old = 1000000
         error = 10000
         #results = [[ for i in range(10)] for j in range(10)]
         # errorThreshold is termination condition
-        while error > errorThreshold:
-            # train RBM only with examples from one class
-                if label[counter] != classToTrain:
-                    counter += 1
-                    counter %= trainingData.shape[0]
-                    continue
+        while True:
+                #print counter
+                # train RBM only with examples from one class
+                
 
                 visible = np.transpose(trainingData[counter,:])
                 hidden = np.zeros((self.NumOfHiddenUnits))
                 visibleRecon = np.zeros((self.NumOfVisibleUnits))
                 hiddenRecon = np.zeros((self.NumOfHiddenUnits))
+                
                 
                 # Gibbs-Sampling
                 #Sampling a new state h for the hidden neurons based on p(h|v)
@@ -95,11 +96,19 @@ class RestrictedBoltzmannMachine(object):
                 self.VisibleBiases += learningRate * (visible - visibleRecon)
                 
                 # Squared-error serves as indicator for the learning progress
-                error = sum((visible-visibleRecon)**2)
-                if counter % 10 == 0:
-                    print("Error is ", error)
+                error += sum((visible-visibleRecon)**2)
                 counter += 1
-                counter %= trainingData.shape[0]
+                counterExamples += 1
+                
+                if counter >= trainingData.shape[0]:
+                    counter %= trainingData.shape[0]
+                    print error / counterExamples
+                    if abs(average_error_old - (error / counterExamples)) < errorThreshold:
+						break
+                    average_error_old = error / counterExamples
+                    counterExamples = 0
+                    error = 0
+                    
         print("End training")
     
     # Computes sample of the learned probability distribution
