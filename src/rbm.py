@@ -105,7 +105,7 @@ class RestrictedBoltzmannMachine(object):
                     counter %= trainingData.shape[0]
                     print error / counterExamples
                     if abs(average_error_old - (error / counterExamples)) < errorThreshold:
-						break
+                        break
                     average_error_old = error / counterExamples
                     counterExamples = 0
                     error = 0
@@ -129,8 +129,19 @@ class RestrictedBoltzmannMachine(object):
                     visible[k] = 1
                 else:
                     visible[k] = 0
+            visible[visible[:] == 1] = 255
             if i % 10 == 0:
-				plt.savefig('./sample_pictures/foo_' + str(i/10) + '.png')
+                plt.savefig('./sample_pictures/foo_' + str(i/10) + '.png')
+        
+    # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...")      
+    def compute_free_energy(self, visible):
+        print visible.shape
+        print self.Weights[:,0].shape
+        print self.VisibleBiases.shape
+        x = np.zeros(784)
+        for j in range(self.NumOfHiddenUnits):
+            x[j] = self.HiddenBiases[j] + np.inner(np.transpose(visible),self.Weights[:,j])
+        return (-np.inner(visible,self.VisibleBiases) - sum([math.log(1 + math.exp(x[i])) for i in range(len(x))]))
         
     
 """
