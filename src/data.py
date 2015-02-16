@@ -33,14 +33,15 @@ class MNIST(object):
             return trainingData
     
     # fast reading data method for csv-file with size s x f
-    def readCSVDataFast(self, datafile = 'data\mnist_train.csv', s=10000, f=785):
+    def readCSVDataFast(self, datafile = './data/mnist_train.csv', s=10000, f=785):
         test_cases = open(datafile, 'r')
         counter = 0
         trainingData = np.zeros((s,f))
         for test in test_cases:
-            while counter < s:
                 trainingData[counter,:] = np.array([int(i) for i in test.split(",")]) 
                 counter += 1
+                if counter == s-1:
+					break
         test_cases.close()
         return trainingData
     
