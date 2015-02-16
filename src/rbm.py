@@ -2,6 +2,7 @@
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 def sigmoid(x):
     return 1 / (1 + math.exp(-x))
@@ -117,19 +118,20 @@ class RestrictedBoltzmannMachine(object):
         hidden = np.zeros((self.NumOfHiddenUnits))
         # Sample is computed by iteratively computing the activation of hidden and visible units
         for i in range(numOfIteration):
-            for i in range(self.NumOfHiddenUnits):
-                if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visible,self.Weights[:,i])):
-                    hidden[i] = 1
+            for j in range(self.NumOfHiddenUnits):
+                if np.random.random() < sigmoid(self.HiddenBiases[j] + np.inner(visible,self.Weights[:,j])):
+                    hidden[j] = 1
                 else:
-                    hidden[i] = 0
+                    hidden[j] = 0
                     
-            for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:])):
-                    visible[i] = 1
+            for k in range(self.NumOfVisibleUnits):
+                if np.random.random() < sigmoid(self.VisibleBiases[k] + np.inner(hidden,self.Weights[k,:])):
+                    visible[k] = 1
                 else:
-                    visible[i] = 0
-                    
-        return visible
+                    visible[k] = 0
+            if i % 10 == 0:
+				plt.savefig('./sample_pictures/foo_' + str(i/10) + '.png')
+        
     
 """
 Version of Restricted Boltzmann Machine that models the joint distribution of 
