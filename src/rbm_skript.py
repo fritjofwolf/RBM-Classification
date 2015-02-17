@@ -6,7 +6,7 @@ import math
 import numpy as np
 from time import time
 # if python < 3.4  -> pip install enum34
-from enum import Enum
+#from enum import Enum
 #sudo pip install Pillow
 try:
     import PIL.Image as Image
@@ -14,22 +14,10 @@ except ImportError:
     import Image
 
 #Type control with enumeration
-class RBMType(Enum):
-    generative = 'generative'  #model using data without labels
-    joint =     'joint'        #models joint probabilities of data and labels
-    discriminative =  'discriminative' #can predict classes
 
-class Dataset(Enum):
-    MNIST = 'MNIST'
-    CIFAR = 'CIFAR'
 
-DataType = Enum('binary',   #{0,1},
-                 'prob',     #<0;1> - for non-binary data 'normalization' is advised
-                 'real')    #any real value
 
-TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
-                             'epochNumber',        # number of iterations  
-                )
+
 """
     Runs a test for a given RBM model, dataset (classification problem), 
     and specified hyperparameters:
@@ -54,8 +42,8 @@ TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
 """       
 
 def runTest(
-            model = RBMType.joint.name,
-            data = Dataset.MNIST.name,
+            model = 'joint',
+            data = 'MNIST',
             dFormat = 'pkl',
             train_size = 50,
             test_size = 10,
