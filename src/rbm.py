@@ -3,8 +3,15 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
+import scipy
+
 
 def sigmoid(x):
+    if x < -100:
+		return 0
+    elif x > 100:
+		return 1
     return 1 / (1 + math.exp(-x))
 
 """
@@ -129,19 +136,18 @@ class RestrictedBoltzmannMachine(object):
                     visible[k] = 1
                 else:
                     visible[k] = 0
-            visible[visible[:] == 1] = 255
-            if i % 10 == 0:
-                plt.savefig('./sample_pictures/foo_' + str(i/10) + '.png')
+            visible[visible[:] == 0] = 255
+            visible[visible[:] == 1] = 0
+            
+            if i % 1 == 0:
+				scipy.misc.imsave('./sample_pictures/foo_' + str(i) + '.png', visible.reshape(28,28))
         
     # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...")      
     def compute_free_energy(self, visible):
-        print visible.shape
-        print self.Weights[:,0].shape
-        print self.VisibleBiases.shape
         x = np.zeros(784)
         for j in range(self.NumOfHiddenUnits):
             x[j] = self.HiddenBiases[j] + np.inner(np.transpose(visible),self.Weights[:,j])
-        return (-np.inner(visible,self.VisibleBiases) - sum([math.log(1 + math.exp(x[i])) for i in range(len(x))]))
+        return (-np.inner(visible,self.VisibleBiases) - sum([max(0,x[i]) for i in range(len(x))]))
         
     
 """
