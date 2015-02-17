@@ -151,11 +151,11 @@
     \begin{itemize}
 	\item Given training image v, sampling hidden unit:
 	\begin{align}
-		\mathbf{p(h_j = 1|v) = sigm(c_j + \sum_i{W_{ji} x_i})}
+		\mathbf{p(h_j = 1|v) = sigm(b_j + \sum_i{W_{ji} v_i})}
 		\end{align}
 	\item Sample visible unit given a hidden layer:
 	\begin{align}
-		\mathbf{p(h_j = 1|v) = sigm(c_j + \sum_i{W_{ji} x_i})}
+		\mathbf{p(v_i = 1|h) = sigm(a_i + \sum_j{W_{ji} h_j})}
 	\end{align}
    \end{itemize}
   \end{frame}
