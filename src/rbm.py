@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import scipy
+from data import *
 
 
 def sigmoid(x):
@@ -305,7 +306,8 @@ class Joint(RestrictedBoltzmannMachine):
         gradientH = (hidden - hiddenRecon).mean(axis=0)   
         
         #print errorX, error
-
+	dataObj = MNIST()
+	dataObj.plot(visibleX)
         return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
     
     """   
