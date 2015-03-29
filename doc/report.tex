@@ -1,0 +1,57 @@
+% Gibt die Klasse des Dokuments an
+\documentclass[a4paper]{scrartcl}
+% passende Kodierung für deutsche Sonderzeichen
+\usepackage[T1]{fontenc}
+% bequemer Eingabezeichensatz(für Eszett etc.)
+\usepackage[utf8]{inputenc}
+% Für align-Umgebung etc.
+\usepackage{amsmath, amsthm}
+
+
+% deutsche Silbentrennung/Rechtschreibung
+\usepackage[ngerman]{babel}
+\usepackage{amssymb}
+
+
+% Eigene Befehle
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{cor}[thm]{Korollar}
+\newtheorem{defi}[thm]{Definition}
+\newtheorem{lem}[thm]{Lemma}
+\newtheorem{bem}[thm]{Bemerkung}
+
+% Standardmengen
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\rainf}{\rightarrow \infty}
+
+
+
+\begin{document}
+% Überschrift
+\title{Classification using Restricted Boltzmann Machines}
+\author{Katarzyna Tarnowska \and Fritjof Wolf}
+\maketitle
+\newpage
+% Abstract
+\begin{abstract}
+\textbf{Abstract:} 
+\end{abstract}
+
+% Textbody
+\section{Introduction}
+
+
+\section{Empirical Results for Discriminative RBM}
+\subsection{A}
+\subsection{B}
+
+% Literatur
+\begin{thebibliography}{9}
+   \bibitem[1]{Hopfield} Hopfield, J.J. (1984) \emph{Neurons with graded response have collective computational properties like those of two-state neurons} (Proc. Natl. Acad. Sci. USA)
+   
+\end{thebibliography}
+\end{document}
