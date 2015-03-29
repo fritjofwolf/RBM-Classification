@@ -1,0 +1,606 @@
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage{fixltx2e}
+\usepackage[greek,english]{babel}
+\usetheme{Warsaw}
+\usecolortheme{beaver}
+%Information to be included in the title page:
+\title{Classification with Restricted Boltzmann Machines}
+\subtitle{Projects in Machine Learning and AI}
+\author{Fritjof Wolf \\ Katarzyna Tarnowska}
+\institute{Technische Universitat Berlin}
+\date{2015}
+\logo{\includegraphics[height=0.9cm]{images/TUBerlin.png}}
+\begin{document}
+\AtBeginSection[]
+{
+\begin{frame}
+\frametitle{Table of Contents}
+\tableofcontents[currentsection]
+\end{frame}
+}
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+\section{Introduction}
+\begin{frame}
+\frametitle{Boltzman Machine (I)}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item Recurrent neural network
+\item Hidden layer and visible layer
+\item Symmetric weights
+\item Stochastic binary neurons
+\item Generative Model
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=6cm]{images/BM.png}
+\end{column}
+\end{columns}
+\end{frame}
+\begin{frame}
+\frametitle{Boltzman Machine (II)}
+\begin{itemize}
+\item Energy function depends on model parameter
+\item Probability depends on weights and state of the other neurons
+\item Unsupervised learning
+\item Used to model probability distribution:
+\begin{itemize}
+\item Apply random input
+\item Run the model for some time to generate sample from learned distribution
+\end{itemize}
+\item First used as an feature extractor
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Restricted Boltzmann Machines}
+\begin{itemize}
+\item Bipartite graph structure
+\item Configuration (\textbf{v},\textbf{h}) has energy:
+\begin{align}
+\math{E(\textbf{v},\textbf{h}) = -\sum_{i=1}^{V}{a_i v_i} - \sum_{j=1}^{H}{b_j h_j} - \sum_{i=1}^{V} \sum_{j=1}^{H}{v_i h_j W_{ij}} }
+\end{align}
+\end{itemize}
+\includegraphics[width=6cm]{images/RBMnetworkGraph.png}
+\begin{itemize}
+{\TINY Source: A.Fischer, Ch.Igel: Training Restricted Boltzmann Machines: An Introduction}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Using RBM for classification}
+Three approaches (Hinton):
+\begin{itemize}
+\item Use the hidden features learned by the RBM as the inputs for some standard discriminative method
+\item Train a separate RBM on each class
+\item Train a joint density model using a single RBM (that has two sets of visible units - \textbf{y} for label and \textbf{x} for data)
+\begin{itemize}
+\includegraphics[width=6cm]{images/jointProbModel.png}
+\end{itemize}
+\end{itemize}
+\end{frame}
+\section{MNIST with RBM}
+\begin{frame}
+\frametitle{MNIST dataset}
+\begin{itemize}
+\includegraphics[width=8cm]{images/mnist.png}
+\end{itemize}
+\begin{itemize}
+\item Handwritten digit images
+\item Often used as benchmark
+\item Raw data consists of greyscale normalized images (28x28 pixels, pixel is number 0-255) and their labels (0..9)
+\item Dataset divided into training (50 000), validation (10 000) and test (10 000) subsets
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{Binary image with Restricted Boltzmann Machines}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\includegraphics[width=3cm]{images/5original.png}
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\includegraphics[width=5cm]{images/RBMnetworkGraph.png}
+\end{itemize}
+\end{column}
+\end{columns}
+\begin{itemize}
+\item Given training image v, sampling hidden unit:
+\begin{align}
+\math{p(h_j = 1|\textbf{v}) = sigm(b_j + \sum_i{W_{ji} v_i}), sigm = 1 / 1+exp(-x))}
+\end{align}
+\item Sample visible unit given a hidden layer:
+\begin{align}
+\math{p(v_i = 1|\textbf{h}) = sigm(a_i + \sum_j{W_{ji} h_j})}
+\end{align}
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{Reconstruction step with Gibbs sampling}
+\includegraphics[width=5cm]{images/CDrecon.png}
+\begin{itemize}
+\item Get one data point from data set
+\item Use values of the data to set state of visible unit - S\textsubscript{i}
+\item Compute S\textsubscript{j} for each hidden neuron based on S\textsubscript{i}
+\item Compute (S\textsubscript{i}.S\textsubscript{j})\textsubscript{0}
+\item Reconstruction: on visible units compute S\textsubscript{i} using the S\textsubscript{j}
+\item Compute state of hidden neurons S\textsubscript{j} again using S\textsubscript{i}
+\item Use S\textsubscript{i} and S\textsubscript{j} to compute (S\textsubscript{i}.S\textsubscript{j})\textsubscript{1}
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{Generative model - train()}
+\begin{itemize}
+\includegraphics[width = 9cm]{images/generativeRBM_learn.png}
+\end{itemize}
+\begin{itemize}
+\item Fitting RBM parameters so that to model distribution of the training data
+\item Iteratively performs one step of Contrastive Divergence (using Gibbs sampling) on data subset of one-class
+\item Learns until specified error threshold between data and reconstruction is reached
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{Monitoring progress of learning}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=5cm]{images/filtry_1epoch_50train.png}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=5cm]{images/filtry_5epoch_50train.png}
+\end{column}
+\end{columns}
+Learned weights after 1 and 5 iterations
+\end{frame}
+\begin{frame}
+\frametitle{Monitoring progress of learning}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=5cm]{images/filtry_10epoch_50train.png}
+\end{column}
+\begin{column}{0.5\textwidth}
+\includegraphics[width=5cm]{images/filters_epoch500_train50.png}
+\end{column}
+\end{columns}
+Learned weights after 10 and 500 iterations
+%Learned weights after 500 iterations on 50-train dataset
+\end{frame}
+\begin{frame}
+\frametitle{Generative model - sample()}
+\begin{itemize}
+\includegraphics[width = 9cm]{images/generativeRBM_gen.png}
+\end{itemize}
+\begin{itemize}
+\item Trained RBM used to generate samples from learned distribution
+\item Shows reconstructed image for the specified digit
+\end{itemize}
+\end{frame}
+\begin{frame}
+\frametitle{Reconstruction error threshold}
+\begin{columns}
+\begin{column}{0.3\textwidth}
+\includegraphics[width=3cm]{images/err20.png}
+\begin{itemize}
+{\TINY error=20}
+\end{itemize}
+\end{column}
+\begin{column}{0.3\textwidth}
+\includegraphics[width=3cm]{images/err10.png}
+\begin{itemize}
+{\TINY error=10}
+\end{itemize}
+\end{column}
+\begin{column}{0.3\textwidth}
+\includegraphics[width=3cm]{images/err5.png}
+\begin{itemize}
+{\TINY error=5}
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+\begin{frame}
+\frametitle{Testing generative model}
+Experiments on different sizes of hidden layer
+\begin{columns}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/5original.png}
+\begin{itemize}
+{\TINY Original}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/hidden200.png}
+\begin{itemize}
+{\TINY hidden=200}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/hidden300.png}
+\begin{itemize}
+{\TINY hidden=300}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/hidden400.png}
+\begin{itemize}
+{\TINY hidden=400}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/hidden500.png}
+\begin{itemize}
+{\TINY hidden=500}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/hidden700.png}
+\begin{itemize}
+{\TINY hidden=700}
+\end{itemize}
+\end{column}
+\end{columns}
+\begin{columns}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/4original.png}
+\begin{itemize}
+{\TINY Original}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/4Hidden100.png}
+\begin{itemize}
+{\TINY hidden=100}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/4Hidden200.png}
+\begin{itemize}
+{\TINY hidden=200}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/4Hidden300.png}
+\begin{itemize}
+{\TINY hidden=300}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/4Hidden400.png}
+\begin{itemize}
+{\TINY hidden=400}
+\end{itemize}
+\end{column}
+\begin{column}{0.15\textwidth}
+\includegraphics[width=2cm]{images/4Hidden500.png}
+\begin{itemize}
+{\TINY hidden=500}
+\end{itemize}
+\end{column}
+\end{columns}
+\begin{alertblock}{Remark}
+Different digit classes have different optimal hyperparameters
+\end{alertblock}
+\end{frame}
+
+\begin{frame}
+\frametitle{Using RBM for classification}
+Three approaches (Hinton):
+\begin{itemize}
+\item Use the hidden features learned by the RBM as the inputs for some standard discriminative method
+\item \textbf{Train a separate RBM on each class}
+\item Train a joint density model using a single RBM (that has two sets of visible units - \textbf{y} for label and \textbf{x} for data)
+\begin{itemize}
+\includegraphics[width=6cm]{images/jointProbModel.png}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Free energy}
+  \begin{itemize}
+  	\item Definition of $F(v)$: 
+	\begin{align}
+  	\math{\exp (-F(\textbf{v})) = \sum_h \exp (-E(\textbf{v},\textbf{h}))}
+	\end{align}
+  	\item Can be computed efficiently (Hinton)
+  	\begin{align}
+  	\math{F(\textbf{v}) = - \sum_i v_i a_i - \sum_j \log(1 + \exp(x_j)), x_j = b_j + \sum_i v_i W_{ij}}
+	\end{align}
+  \end{itemize}
+  \end{frame}  
+  
+  \begin{frame}
+  \frametitle{Discrimination with standard RBM}
+  
+  \begin{itemize}
+  	\item Log probability that RBM trained on class c assigns to the test vector:
+  \end{itemize}
+  \begin{align}
+  	\math{log (p(\textbf {t}\vert c)) = -F_c(\textbf t) -log (Z_c)}
+  \end{align}
+  
+  \begin{itemize}
+  	\item Computing the partition function is infeasible
+  	\item Instead compute softmax-model for the unknown N partition functions
+  \end{itemize}
+  \end{frame}
+
+
+\section{MNIST with DRBM}
+
+\begin{frame}
+\frametitle{Using RBM for classification}
+Three approaches (Hinton):
+\begin{itemize}
+\item Use the hidden features learned by the RBM as the inputs for some standard discriminative method
+\item Train a separate RBM on each class
+\item \textbf{Train a joint density model using a single RBM (that has two sets of visible units - y for label and x for data)}
+\begin{itemize}
+\includegraphics[width=6cm]{images/jointProbModel.png}
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Discriminative model - train()}
+\begin{columns}
+\begin{column}{0.4\textwidth}
+\includegraphics[width = 5cm]{images/DRBMtrain.png}
+\end{column}
+\begin{column}{0.6\textwidth}
+\begin{itemize}
+\item DRBM models a joint distribution of inputs (\textbf{x}) and target classes (\textbf{y})
+\item Two sets of visible units and two weight matrices: between \textbf{x} and \textbf{h} (\textbf{W}) and between \textbf{y} and \textbf{h} (\textbf{U})
+\item Train() performs n-step Constrastive Divergence for a mini-batch
+\end{itemize}
+\end{column}
+\end{columns}
+\end{frame}
+\begin{frame}
+\frametitle{n-step Contrastive Divergence}
+\includegraphics[width=8cm]{images/trainRBM.png}
+\begin{itemize}
+\item For each data point in data set:
+\begin{itemize}
+\item perform reconstruction in n-steps
+\item Accumulate CD\textsubscript{pos} = CD\textsubscript{pos} + (S\textsubscript{i}.S\textsubscript{j})\textsubscript{0}
+\item Accumulate CD\textsubscript{neg} = CD\textsubscript{neg} + (S\textsubscript{i}.S\textsubscript{j})\textsubscript{n}
+\end{itemize}
+\item Compute average CD\textsubscript{pos} and CD\textsubscript{neg} (divide by nr of points)
+\item Compute gradient CD = CD\textsubscript{pos} - CD\textsubscript{neg}
+\item Update weights and biases W" = W + $\alpha$ *CD
+%\item Update weights and biases W" = W + \greektext a\latintext *CD
+\item Repeat for a whole dataset in number of epochs (iterations)
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Testing for optimal parameters}
+	\begin{itemize}
+	\item Binary problem assumed(binarization threshold = 0.5)
+	\item Parameters possible to test within DRBM implementation:
+	\begin{itemize}
+	\item size of training set,
+	\item size of test set,
+	\item learning rate,
+	\item initial weight distribution,
+	\item momentum,
+	\item l2 penaltization,
+	\item number of steps for contrastive divergence,
+	\item size of hidden units,
+	\item number of epochs for training,
+	\item number of iterations for sampling,
+	\item error threshold for traning,
+	\item random state
+	\end{itemize}
+	\end{itemize}
+\end{frame}
+
+\begin{frame}[plain]
+	\frametitle{Reconstruction error for 100 epochs for different models}
+	The reconstruction error on the training set falls rapidly and consistently at the start of learning and then more slowly.
+	\includegraphics[width=12.5cm]{images/Plot_Convergence50train100epochs.png}
+	{\TINY Base model: lr = 0.01, hidden units=500, random state =1234, batch size=10, 1-step constrastive divergence,
+	no momentum}
+\end{frame}
+
+\begin{frame}[plain]
+	\frametitle{Reconstruction error for first 10 epochs}
+	{\TINY Base model: lr = 0.01, hidden units=500, random state =1234, batch size=10, 1-step constrastive divergence,
+	no momentum}
+	\includegraphics[width=12.5cm]{images/Plot_Convergence50train10epochs.png}
+\end{frame}
+
+\begin{frame}[plain]
+	\frametitle{Reconstruction error for last 5 epochs}
+	\includegraphics[width=11.5cm]{images/Plot_Convergence50train95-100epochs.png}
+	{\TINY Base model: lr = 0.01, hidden units=500, random state =1234, batch size=10, 1-step constrastive divergence,
+	no momentum}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Model comparison}
+	\begin{itemize}
+	\item Increasing number of hidden units (from 400 to 700) improves reconstruction, but takes more time to train
+	\item Higher learning rate causes reconstruction error to drop more sharply
+	%\item For larger train datasets higher learning rate caused instability (after some time of drop error started to increase)
+	\item Different random states do not change reconstruction error significantly
+	\item 1-step contrastive divergence is optimal
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Reconstruction results}
+	\begin{itemize}
+	\item Momentum - smoothing parameter
+	\item After 500-epoch training MSE falls below 1.0
+	\item Reconstruction after 500 epochs of training:
+	\end{itemize}
+	\begin{columns}
+	\begin{column}{0.3\textwidth}
+	\includegraphics[width=3cm]{images/0original.png}
+	\begin{itemize}
+	{\TINY Original image}
+	\end{itemize}
+	\end{column}
+	\begin{column}{0.3\textwidth}
+	\includegraphics[width=3cm]{images/0_reconstructed_momentum00.png}
+	\begin{itemize}
+	{\TINY momentum=0.0}
+	\end{itemize}
+	\end{column}
+	\begin{column}{0.3\textwidth}
+	\includegraphics[width=3cm]{images/0_reconstructed_momentum05.png}
+	\begin{itemize}
+	{\TINY momentum=0.5}
+	\end{itemize}
+	\end{column}
+	\end{columns}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Discriminative model - predict()}
+	\begin{columns}
+	\begin{column}{0.4\textwidth}
+	\includegraphics[width = 4cm]{images/DRBMclas.png}
+	\end{column}
+	\begin{column}{0.6\textwidth}
+	\begin{itemize}
+	\item Fix the visible variables corresponding to the image
+	\item Sample target variables corresponding to the labels in chosen number of iterations
+	\item For each datapoint in testset return probabilities of each class
+	\item Choose the label class with highest probability
+	\item Compare with original labels
+	\item Count wrong predictions and compute accuracy
+	\end{itemize}
+	\end{column}
+	\end{columns}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Testing DRBM for classification (I)}
+	\includegraphics[width=11.5cm]{images/acc.png}
+	\begin{itemize}
+	{\TINY *This case was tested on faster PC}
+	\end{itemize}
+	\begin{itemize}
+	\item Accuracy for train set was 100\% even for small cases
+	%\item Classification accuracy depends on are train- and test sets size
+	%\item For larger data sets train and test times become prohibitive for personal computing
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Testing DRBM for classification (II)}
+	\includegraphics[width=8.5cm]{images/accHidd.png}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Testing DRBM for classification(III)}
+	\begin{itemize}
+	\item Optimal learning rate for original data size is 0.01
+	\item Higher learning rate (by an order of magnitude) caused instability in learning
+	\item Lower learning rate (by an order of magnitude) worsened accuracy
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Testing DRBM for classification (IV)}
+	\includegraphics[width=10.5cm]{images/accBatch.png}
+	\begin{itemize}
+	%"Ideal mini-batch size is often equal to the number of classes"
+	\item Calculating gradient and weights update on mini-batch instead of on one single training case
+	\item Optimal mini-batch size equals to the number of classes
+	\end{itemize}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Classification with RBM - conclusion}
+	\begin{block}{Remark 1}
+	RBM implementation and preliminary test results within this project proved that RBMs can be effectively used as standalone classifiers, instead of merely as feature extractors.
+	\end{block}
+	\begin{block}{Remark 2}
+	Discriminative versions of RBMs integrate discovering features of inputs with their use in classification, without relying on a separate classifier, facilitating model selection.
+	\end{block}
+\end{frame}
+
+\section{Non-binary RBM}   
+  \begin{frame}
+  	\frametitle{CIFAR dataset}
+  	\begin{itemize}
+  	\item 60000 images in 10 or 100 categories
+  	\item 32x32 8-bit RGB images
+  	\item Best performance is about 90 \% (CIFAR-10) and 65 \% for CIFAR-100
+  	\end{itemize}
+  	\includegraphics[width=6cm]{images/cifar_preview.png}
+  	% http://karpathy.github.io/assets/cifar_preview.png
+  \end{frame}
+  \begin{frame}
+  	\frametitle{Binomial Units}
+  	\begin{itemize}
+  	\item Generalizing to integer input from 0 to N
+  	\item N different binary copies of each visible unit
+  	\item Same weights and biases, therefore same probability 
+  	 \end{itemize}
+  \end{frame}
+  \begin{frame}
+  	\frametitle{Linear Rectified Units}
+  	\begin{itemize}
+  	\item Similiar to binomial units, but more stable
+  	\item Every binary copy has a different fixed offset to the bias
+  	\item Different probability for each unit, high computational cost 
+  	\item Fast approximation should work fine with CD\textsubscript{1} (Hinton) 
+  	\end{itemize}
+  	
+  \end{frame}
+  \begin{frame}
+  	\frametitle{Problems}
+  	\begin{itemize}
+  	\item High computational cost: 3072 visible units, many hidden units
+  	\item High variance of underlying distribution
+  	\item High reconstruction error leads to oscillating weight/biases supdates
+  	\end{itemize}
+  \end{frame}
+
+\section{Further work}
+\begin{frame}
+\frametitle{Plans for further work}
+\begin{itemize}
+%\item Test other metrics in monitoring progress of learning
+\item Experimenting with other test parameters
+\item Test-against-all-labels prediction approach for DRBM
+\item Optimizing algorithms for best performance
+\item Further work on CIFAR and different types of unit
+\end{itemize}
+\end{frame}
+\begin{frame}[allowframebreaks]
+	\frametitle<presentation>{Literature}
+	\begin{thebibliography}{10}
+	\beamertemplatearticlebibitems
+	\bibitem{Larochelle}
+	Hugo Larochelle, Yoshua Bengio.
+	\newblock Classification using Discriminative Restricted Boltzmann Machines.
+	\newblock {\em Proceedings of the 25th International Conference on Machine Learning}, 2008.
+	\bibitem{Hinton}
+	Geoffrey Hinton.
+	\newblock A Pratical Guide to Training Restricted Boltzmann Machines.
+	\newblock {\em UTML TR 2010-003}, 2010.
+	\bibitem {Miguel}
+	Miguel A. Carreira-Perpinan, Geoffrey E. Hinton
+	\newblock On Contrastive Divergence Learning
+	\newblock {\em Artificial Intelligence and Statistics}, 2005.
+	%\bibitem{Fischer}
+	%Asja Fischer, Christian Igel.
+	%\newblock Training Restricted Boltzmann Machines: An Introduction.
+	%\newblock {\em UTML TR 2010-003}, 2(1):50--100, 2008.
+	\end{thebibliography}
+\end{frame}
+\begin{frame}[plain]
+\frametitle{Thank you}
+\includegraphics[width=11cm]{images/qa.png}
+\end{frame}
+\end{document}

@@ -184,9 +184,9 @@ class Joint(RestrictedBoltzmannMachine):
         
         
         #Initialize weight, biases to zeros
-        #self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
-        #self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
-        #self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
+        self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
+        self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
+        self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
         #self.WeightsTH = np.zeros(self.WeightsTH.shape, float)
         #self.WeightsVH = np.zeros(self.WeightsVH.shape, float)
 
@@ -194,9 +194,9 @@ class Joint(RestrictedBoltzmannMachine):
         #self.NumOfHiddenUnits = numOfHiddenUnits
         
         #Initialize weight, biases to small numbers
-        self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
-        self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)       
-        self.TargetBiases = scal * np.random.randn(numOfTargetUnits)
+        #self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
+        #self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)       
+        #self.TargetBiases = scal * np.random.randn(numOfTargetUnits)
         
     # TODO: ANpassen        
     """
@@ -306,8 +306,8 @@ class Joint(RestrictedBoltzmannMachine):
         gradientH = (hidden - hiddenRecon).mean(axis=0)   
         
         #print errorX, error
-	dataObj = MNIST()
-	dataObj.plot(visibleX)
+	#dataObj = MNIST()
+	#dataObj.plot(visibleX)
         return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
     
     """   
@@ -413,7 +413,7 @@ class Joint(RestrictedBoltzmannMachine):
     """
     def predict(self,testsetX, numOfIteration):
         labels = np.zeros(len(testsetX))
-        print testsetX.shape
+        #print testsetX.shape
         for i in range(len(testsetX)):
             reconY = self.sample(testsetX[i],numOfIteration = numOfIteration)
             #for j in range(len(reconY)):
@@ -438,6 +438,8 @@ class Discriminative(Joint):
     
     """
     Overrides train method in Joint
+    computes gradient exactly, not by estimation
+    then used in stochastic gradient descent optimization
     """
     def train(self, visibleX, visibleY, learningRate, errorThreshold, k=1, 
         weightDecay='l2', momentum=0.5, stopCondition='epochNumber', 

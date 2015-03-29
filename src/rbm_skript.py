@@ -6,7 +6,7 @@ import math
 import numpy as np
 from time import time
 # if python < 3.4  -> pip install enum34
-#from enum import Enum
+from enum import Enum
 #sudo pip install Pillow
 try:
     import PIL.Image as Image
@@ -14,7 +14,23 @@ except ImportError:
     import Image
 
 #Type control with enumeration
+class RBMType(Enum):
+    generative = 'generative'  #model using data without labels
+    joint =     'joint'        #models joint probabilities of data and labels
+    discriminative =  'discriminative' # modification of joint - optimizes p(y|x), not p(x,y)
+    binomial =  'binomial' #models binomial units
 
+class Dataset(Enum):
+    MNIST = 'MNIST'
+    CIFAR = 'CIFAR'
+
+DataType = Enum('binary',   #{0,1},
+                 'prob',     #<0;1> - for non-binary data 'normalization' is advised
+                 'real')    #any real value
+
+TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
+                             'epochNumber',        # number of iterations  
+                )
 
 
 
@@ -42,17 +58,17 @@ except ImportError:
 """       
 
 def runTest(
-            model = 'joint',
-            data = 'MNIST',
+            model = RBMType.joint.name,
+            data = Dataset.MNIST.name,
             dFormat = 'pkl',
-            train_size = 50,
-            test_size = 10,
+            train_size = 60000,
+            test_size = 10000,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
             lr = 0.05,
             scal = 0.01,
-            nrHiddenUnits_p = 700,
+            nrHiddenUnits_p = 6000,
             nrEpochs_p = 100,
             nrOfIter = 1000,
             randomState = 1234,
@@ -73,18 +89,23 @@ def runTest(
             trainingSet, validationSet, testSet = dataObj.loadData()
             trainX, trainY = trainingSet
             validX, validY = validationSet
-            testX, testY = testSet
+            #testX, testY = testSet
             #case of binary data
             if binary:
                 trainX = binarize(trainX, threshold = binarizationThreshold)
-                testX= binarize(trainX, threshold = binarizationThreshold)
+                #testX= binarize(trainX, threshold = binarizationThreshold)
                 validX= binarize(validX, threshold = binarizationThreshold)
+            if (train_size > 50000):
+                trainX= np.concatenate((trainX, validX))
+                trainY= np.concatenate((trainY, validY))
+            
             trainX = trainX[:train_size]
             trainY = trainY[:train_size]
-            testX = testX[:test_size]
-            testY = testY[:test_size]
-            validX = validX[:test_size]
-            validY = validY[:test_size]
+            #testX = testX[:test_size]
+            #testY = testY[:test_size]
+            #validX = validX[:test_size]
+            #validY = validY[:test_size]
+            
         else:
             #Case of reading from CSV
             if dFormat =='csv':
@@ -95,14 +116,36 @@ def runTest(
                                       threshold = binarizationThreshold)
                 else:
                     trainX = scale(dataSet[:train_size,1:])
+        #Read test data from CSV
+        testSet = dataObj.readCSVDataFast(datafile = 'data/mnist_test.csv', s=test_size)
+        testY = testSet[:test_size,0]
+        if binary:
+            testX = binarize(scale(testSet[:test_size,1:]), 
+                                    threshold = binarizationThreshold)
     # Case for CIFAR data
     if (data == 'CIFAR'):
-        pass
-        #TO DO
-    read_time = time() - t0
-    
-    #dataObj.plot(trainX[3])
-    #dataObj.visualize(trainX[0,:])
+        data_dict1 = loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
+        data_dict2 = loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
+        data_dict3 = loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
+        data_dict4 = loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
+        data_dict5 = loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
+        examples = np.zeros((50000,3072))
+        labels = np.zeros(50000)
+        examples[:10000,:] = data_dict1["data"]
+        examples[10000:20000,:] = data_dict2["data"]
+        examples[20000:30000,:] = data_dict3["data"]
+        examples[30000:40000,:] = data_dict4["data"]
+        examples[40000:,:] = data_dict5["data"]
+        #print examples
+        labels[:10000] = data_dict1["labels"]
+        labels[10000:20000] = data_dict2["labels"]
+        labels[20000:30000] = data_dict3["labels"]
+        labels[30000:40000] = data_dict4["labels"]
+        labels[40000:] = data_dict5["labels"]
+        read_time = time() - t0
+        #print labels
+        #data.plotCIFAR(examples[0,:])
+        print "Data read"
     
     #Initialize a chosen RBM model and perform train and sample operations
     if(model == 'generative'): 
@@ -123,6 +166,7 @@ def runTest(
         #dataObj.visualize(RBM1.sample(nrOfIter))
     
     if(model == 'joint'):
+        print('Joint')
         #transform training labels using LabelBinarization to model joint probabilities
         trainY = dataObj.transformLabel(trainY)
         #print (trainY)[0]
@@ -144,6 +188,7 @@ def runTest(
         mErrorY = 0
         mEs = np.zeros(nrEpochs_p+1)
         #for each epoch 
+        #print('Train')
         t1 = time()
         while epoch < nrEpochs_p:
             t2 = time()
@@ -196,11 +241,12 @@ def runTest(
         image.show()
 
         #Do sampling for one case of unseen data
-        #dataObj.plot(validX[0])
-        print "Original label: %d" % validY[0]
-        #dataObj.plot(validX[2])
-        print "Original label: %d" % validY[2]
+        dataObj.plot(trainX[59999])
+        print "Original label: %d" % trainY[59999]
+        #dataObj.plot(validX[9998])
+        #print "Original label: %d" % validY[9998]
         #validY = dataObj.transformLabel(validY)
+        
         t2=time()
         reconstructedY = jRBM1.sample(validX[0], nrOfIter)
         print reconstructedY
@@ -226,13 +272,15 @@ def runTest(
         #for i in range(len(reconstructedY)):
             #if reconstructedY[i] == 1:
                 #print i
-        """  
+        
         #Compute classification error
         #lb2, validY = dataObj.transformLabel(validY)
         #for i in range(len(validX[0:3])):
             #dataObj.plot(validX[i])
+        """
+        #print('Test')
         t3=time()
-        label = jRBM1.predict(validX,numOfIteration=nrOfIter)
+        label = jRBM1.predict(testX,numOfIteration=nrOfIter)
         predict_time = time()-t3
         #count how many had wrong predicted label
         #also is wrong if more than one classes are predicted
@@ -241,15 +289,20 @@ def runTest(
         #print trainY
         counter = 0
         for i in range(len(label)):
-            print "Reconstrlabel is %f, original label is%f" % (label[i],validY[i]) 
-            if label[i] != validY[i]:
+            #print "Reconstrlabel is %f, original label is%f" % (label[i],testY[i]) 
+            if label[i] != testY[i]:
                 counter +=1
         acc = 1 - (counter / float(len(label)))
-        print counter / float(len(label))
-        print counter
+        #print counter / float(len(label))
+        #print counter
         print "Accuracy is %0.3f" % acc
         print "Prediction time is %0.3fs" % predict_time
-
+        
+    if(model == 'binomial'):
+        bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,300,None)
+        bRBM.train(examples,labels,labels[0],0.1,5)
+        print "RBM trained"
+        data.plot(bRBM.sample(1000))
 #Simple test to check RBMs initialization and inheritance
 def simpleTest():
     #Test on basic RBM model
@@ -266,9 +319,9 @@ def simpleTest():
 # miscellaneous short tests   
 def miscTest():
     #Checking current working directory and relative path 
-    #print os.getcwd()
-    #print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification\data\mnist_train.csv')
-    print (RBMType.generative.name)
+    print os.getcwd()
+    print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification4\data\mnist_test.csv')
+    #print (RBMType.generative.name)
     
 
 def plotResults(lr1 = 0.5,momentum = 0.5, 
