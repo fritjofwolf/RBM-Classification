@@ -61,14 +61,14 @@ def runTest(
             model = RBMType.joint.name,
             data = Dataset.MNIST.name,
             dFormat = 'pkl',
-            train_size = 60000,
-            test_size = 10000,
+            train_size = 100,
+            test_size = 100,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
-            lr = 0.05,
+            lr = 0.005,
             scal = 0.01,
-            nrHiddenUnits_p = 6000,
+            nrHiddenUnits_p = 500,
             nrEpochs_p = 100,
             nrOfIter = 1000,
             randomState = 1234,
@@ -166,7 +166,7 @@ def runTest(
         #dataObj.visualize(RBM1.sample(nrOfIter))
     
     if(model == 'joint'):
-        print('Joint')
+        #print('Joint')
         #transform training labels using LabelBinarization to model joint probabilities
         trainY = dataObj.transformLabel(trainY)
         #print (trainY)[0]
@@ -215,7 +215,7 @@ def runTest(
         print "Train time: %0.3fs" % train_time
         
         #Use return if plotResult function is called
-        #return mEs
+        return mEs
         """
         #Plot mean squared error on data within epochs
         plt.figure()
@@ -239,10 +239,13 @@ def runTest(
             )
         )
         image.show()
-
+        
+        
         #Do sampling for one case of unseen data
-        dataObj.plot(trainX[59999])
-        print "Original label: %d" % trainY[59999]
+        for i in train_size:
+            
+        #dataObj.plot(trainX[59999])
+            print "Original label: %d" % trainY[i]
         #dataObj.plot(validX[9998])
         #print "Original label: %d" % validY[9998]
         #validY = dataObj.transformLabel(validY)
@@ -323,7 +326,8 @@ def miscTest():
     print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification4\data\mnist_test.csv')
     #print (RBMType.generative.name)
     
-
+"""Function that plots and compares MSE for training 
+with different parameters and different values """
 def plotResults(lr1 = 0.5,momentum = 0.5, 
                 nrH1 = 700, nrH2 = 300,
                 seed1 = 9999, batch_size = 5,
@@ -358,8 +362,34 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
     plt.xlim(xmin=1)
     plt.show()
 
-runTest();
+"""Function that plots and compares MSE for training 
+with a different values for a chosen parameter """   
+def plotResults2(parameter = 'lr', 
+                 val1 = 0.005,
+                 val2 = 0.05,
+                 val3 = 0.1,
+                 val4 = 0.5,
+                nr_epochs = 100):
+    plt.title('Convergence comparison for different learning rates')
+    plt.figure()
+    mswe1 = runTest(lr=val1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe1, 'b', label='Learning rate=%.1f' % val1)
+    mswe2 = runTest(lr=val2, nrEpochs_p = nr_epochs)
+    plt.plot(mswe2, 'g', label='Learning rate=%.1f' % val2)
+    mswe3 = runTest(lr=val3, nrEpochs_p = nr_epochs)
+    plt.plot(mswe3, 'r', label='Learning rate=%.1f' % val3)
+    mswe4 = runTest(lr=val4, nrEpochs_p = nr_epochs)
+    plt.plot(mswe4, 'b', label='Learning rate=%.1f' % val4)
+
+    plt.legend(loc="best")
+    plt.grid()
+    plt.xlabel('Epoch')
+    plt.ylabel('Mean-squared error on data')
+    plt.xlim(xmin=1)
+    plt.show()
+
+#runTest();
 #simpleTest();
 #miscTest();
-#plotResults()
+plotResults2()
 

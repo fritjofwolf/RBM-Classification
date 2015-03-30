@@ -182,7 +182,6 @@ class Joint(RestrictedBoltzmannMachine):
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
             self.WeightsTH = scal * np.random.randn(numOfTargetUnits, numOfHiddenUnits)
         
-        
         #Initialize weight, biases to zeros
         self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
         self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
@@ -197,8 +196,7 @@ class Joint(RestrictedBoltzmannMachine):
         #self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
         #self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)       
         #self.TargetBiases = scal * np.random.randn(numOfTargetUnits)
-        
-    # TODO: ANpassen        
+               
     """
     Train the RBM using the contrastive divergence sampling
     Overrides train method of base class, 

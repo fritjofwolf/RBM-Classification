@@ -31,7 +31,7 @@
 
 
 \begin{document}
-% Überschrift
+% Title
 \title{Classification using Restricted Boltzmann Machines}
 \author{Katarzyna Tarnowska \and Fritjof Wolf}
 \maketitle
@@ -43,15 +43,38 @@
 
 % Textbody
 \section{Introduction}
-
+...
+Hinton \cite{Hinton} describes three approaches to using Restricted Boltzmann Machines for classification task:
+\begin{itemize}
+    \item Using the hidden features learned by the RBM as the inputs for some standard discriminative method
+    \item Training a separate RBM on each class
+	\item Training a joint density model using a single RBM
+\end{itemize}
+The first method will not be discussed within this paper. Results from the second approach will be presented in the first section of this paper. The empirical results for the third approach will be described in the second section.
+...
+\subsection{Datasets}
+\subsection{Models}
 
 \section{Empirical Results for Discriminative RBM}
-\subsection{A}
-\subsection{B}
+This section describes the empirical results of a RBM trained with joint density model (the third approach of using RBM's for discrimination, described by Hinton \cite{Hinton}).
+\subsection{Assumptions}
+Joint density model assumes that RBM has two sets of visible units. Besides the units representing a data vector, there are units representing a label (as a binary vector). As a result, there are also two sets of weights: between data and hidden units and between label units and hidden units. Model learns joint probability distribution with n-step contrastive divergence (CD) algorithm. 
+\par Class prediction is performed by done by choosing the most likely label given the input, under the learned model. In more detail, by fixing the visible units corresponding to the test data input and sampling target units, with the use of learned weights. In the last sampling iteration the target units are set to probabilities values instead of stochastic binary units. The predicted class is the position in the binary vector with the highest probability.
+\par Training is performed on mini-batches of the training set. In terms of the CD algorithm, it means that weights are updated after estimating a gradient on a subset of training cases (a "mini-batch"), instead of on a one single training case. Such approach is known to be more efficient, because of possible use of CPU parallelism and multi-threading.
+\par Tests were carried out on MNIST dataset, divided into training and test-sets. The data was binarized (with the binarization threshold of 0.5). 
 
-% Literatur
+\subsection{Results}
+The first aim of testing implemented RBM was finding optimal hyperparameters (optimal model parameters).
+\par The results from training an RBM with different learning rates are shown on the Figure 1.
+\par The second test was done on number of steps for contrastive divergence algorithm.
+\par Number of hidden units 
+\par Experiments with momentum
+\par Original data and reconstructions with optimal hyperparameters
+\par In the second step, classification metrics were computed. The most important metric for classification task is accuracy, that is, the percentage of right predictions. Accuracy was computed by comparing the label predicted by RBM classifier with the original label. Wrong predictions were counted.
+% Literature
 \begin{thebibliography}{9}
    \bibitem[1]{Hopfield} Hopfield, J.J. (1984) \emph{Neurons with graded response have collective computational properties like those of two-state neurons} (Proc. Natl. Acad. Sci. USA)
+   \bibitem[2]{Hinton} Hinton, G. (2010) \emph{A Pratical Guide to Training Restricted Boltzmann Machines.} (UTML TR 2010-003)
    
 \end{thebibliography}
 \end{document}
