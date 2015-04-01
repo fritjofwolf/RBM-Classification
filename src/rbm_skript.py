@@ -31,8 +31,8 @@ DataType = Enum('binary',   #{0,1},
 TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
                              'epochNumber',        # number of iterations  
                 )
-
-
+#global structure to store metrics across different test runs
+results = [] 
 
 """
     Runs a test for a given RBM model, dataset (classification problem), 
@@ -66,7 +66,7 @@ def runTest(
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
-            lr = 0.005,
+            lr = 0.1,
             scal = 0.01,
             nrHiddenUnits_p = 500,
             nrEpochs_p = 100,
@@ -76,6 +76,8 @@ def runTest(
             momentum_p = 0.0,
             CDk_p=1):
     
+    #will modify the global variable
+    global results
     # Generate random state
     rnGen = np.random.RandomState(randomState)
     
@@ -301,6 +303,9 @@ def runTest(
         print "Accuracy is %0.3f" % acc
         print "Prediction time is %0.3fs" % predict_time
         
+        # save results to plot later
+        results.append((acc, train_time, predict_time))
+        
     if(model == 'binomial'):
         bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,300,None)
         bRBM.train(examples,labels,labels[0],0.1,5)
@@ -364,22 +369,22 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 
 """Function that plots and compares MSE for training 
 with a different values for a chosen parameter """   
-def plotResults2(parameter = 'lr', 
-                 val1 = 0.005,
-                 val2 = 0.05,
-                 val3 = 0.1,
-                 val4 = 0.5,
+def plotResults2(parameter = 'scal', 
+                 val1 = 0,
+                 val2 = 0.1,
+                 val3 = 0.01,
+                 val4 = 50,
                 nr_epochs = 100):
-    plt.title('Convergence comparison for different learning rates')
     plt.figure()
-    mswe1 = runTest(lr=val1, nrEpochs_p = nr_epochs)
-    plt.plot(mswe1, 'b', label='Learning rate=%.1f' % val1)
-    mswe2 = runTest(lr=val2, nrEpochs_p = nr_epochs)
-    plt.plot(mswe2, 'g', label='Learning rate=%.1f' % val2)
-    mswe3 = runTest(lr=val3, nrEpochs_p = nr_epochs)
-    plt.plot(mswe3, 'r', label='Learning rate=%.1f' % val3)
-    mswe4 = runTest(lr=val4, nrEpochs_p = nr_epochs)
-    plt.plot(mswe4, 'b', label='Learning rate=%.1f' % val4)
+    plt.title('Convergence comparison for different weight initializations')
+    mswe1 = runTest(scal =val1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe1, 'b', label='%0.2f' % val1)
+    mswe2 = runTest(scal=val2, nrEpochs_p = nr_epochs)
+    plt.plot(mswe2, 'g', label='%0.2f' % val2)
+    mswe3 = runTest(scal=val3, nrEpochs_p = nr_epochs)
+    plt.plot(mswe3, 'r', label='%0.2f' % val3)
+    #mswe4 = runTest(parameter=val4, nrEpochs_p = nr_epochs)
+    #plt.plot(mswe4, 'k', label='%d' % val4)
 
     plt.legend(loc="best")
     plt.grid()
@@ -388,6 +393,46 @@ def plotResults2(parameter = 'lr',
     plt.xlim(xmin=1)
     plt.show()
 
+
+"""Function that plots bar chart
+and compares accuracy and times metrics for the chosen model """  
+def plotResults3():
+    names=[]
+    for val, name in (
+        (100, "Hidden units=100"),
+        (400, "Hidden units=400"),
+        (700, "Hidden units=700")):
+        print('=' * 80)
+        print(name)
+        names.append((name))
+        runTest(nrHiddenUnits_p=val)
+    
+    # make some plots
+    global results
+    indices = np.arange(len(results))
+    #indices = 1
+    
+    results = [[x[i] for x in results] for i in range(3)]
+    
+    acc, train_time, predict_time = results
+    train_time = np.array(train_time) / np.max(train_time)
+    predict_time = np.array(predict_time) / np.max(predict_time)
+    
+    plt.figure(figsize=(12, 8))
+    plt.title("Classification metrics")
+    plt.barh(indices, acc, .2, label="accuracy", color='r')
+    plt.barh(indices + .3, train_time, .2, label="train time", color='g')
+    plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
+    plt.yticks(())
+    plt.legend(loc='best')
+    plt.subplots_adjust(left=.25)
+    plt.subplots_adjust(top=.95)
+    plt.subplots_adjust(bottom=.05)
+    
+    for i, c in zip(indices, names):
+        plt.text(-.3, i, c)
+    
+    plt.show()   
 #runTest();
 #simpleTest();
 #miscTest();

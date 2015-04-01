@@ -54,45 +54,104 @@ Hinton \cite{Hinton} describes three approaches to using Restricted Boltzmann Ma
 \end{itemize}
 The first method will not be discussed within this paper. Results from the second approach will be presented in the first section of this paper. The empirical results for the third approach will be described in the second section.
 ...
-\subsection{Datasets}
-
-\section{Empirical Results for Discriminative RBM}
-This section describes the empirical results of a RBM trained with joint density model (the third approach of using RBM's for discrimination, described by Hinton \cite{Hinton}).
-\subsection{Assumptions}
-Joint density model assumes that RBM has two sets of visible units. Besides the units representing a data vector ({\bf x}), there are units representing a label (as a binary vector) - {\bf y}. As a result, there are also two sets of weights: between data and hidden units ({\bf W}) and between label units and hidden units ({\bf U}). 
+\subsection{Models}
+\paragraph{Generative RBM}
 \begin{center}
-\includegraphics[width=6cm]{images/jointProbModel.png}
+\includegraphics[width=14cm]{images/generativeRBM.png}
+\captionof{figure}{Generative model of RBM. Source: A.Fischer, Ch.Igel: Training Restricted Boltzmann Machines: An Introduction. \cite{Fischer} }
+\end{center}
+\paragraph{Discriminative RBM}
+Joint density model assumes that RBM has two sets of visible units. Besides the units representing a data vector ({\bf x}), there are units representing a label - {\bf y}. Label is therefore expressed by binary indicator variables, one of which is set to 1, indicating a particular label (for the case of handwritten images - a particular digit), while the others are set to 0. 
+As a result of two sets of visible units, there are also two sets of weights: between data and hidden units ({\bf W}) and between label units and hidden units ({\bf U}). 
+\begin{center}
+\includegraphics[width=8cm]{images/jointProbModel.png}
 \captionof{figure}{Joint probability model of Restricted Boltzmann Machines}  
 \end{center}
-Model learns joint probability distribution with n-step contrastive divergence (CD) algorithm.
+Model learns joint probability distribution with n-step contrastive divergence (CD) algorithm (reconstruction step is performed n-times before updating weights). Training is performed on mini-batches of the training set. In terms of the CD algorithm, it means that weights are updated after estimating a gradient on a subset of training cases (a "mini-batch"), instead of on a one single training case. Such approach is known to be more efficient, because of possible use of CPU parallelism and multi-threading.
 \begin{center}
-\includegraphics[width=14cm]{images/trainRBM.png}
+\includegraphics[width=10cm]{images/trainRBM.png}
 \captionof{figure}{Illustration of N-step Contrastive Divergence algorithm}  
 \end{center} 
-\par Class prediction is performed by done by choosing the most likely label given the input, under the learned model. In more detail, by fixing the visible units corresponding to the test data input and sampling target units, with the use of learned weights. In the last sampling iteration the target units are set to probabilities values instead of stochastic binary units. The predicted class is the position in the binary vector with the highest probability.
-\par Training is performed on mini-batches of the training set. In terms of the CD algorithm, it means that weights are updated after estimating a gradient on a subset of training cases (a "mini-batch"), instead of on a one single training case. Such approach is known to be more efficient, because of possible use of CPU parallelism and multi-threading.
-\par Tests were carried out on MNIST dataset, divided into training and test-sets. The data was binarized (with the binarization threshold of 0.5). 
+\par Class prediction is done by choosing the most likely label given the input, under the learned model. In more detail, it fixes the visible units corresponding to the test data input and samples target units, with the use of learned weights. In the last sampling iteration the target units are set to probabilities values instead of stochastic binary units. The predicted class is the position in the binary vector with the highest probability. 
+\begin{center}
+\includegraphics[width=14cm]{images/DRBM.png}
+\captionof{figure}{Classification with discriminative model of RBM. Source: A.Fischer, Ch.Igel: Training Restricted Boltzmann Machines: An Introduction. \cite{Fischer} }
+\end{center}
 
-\subsection{Results}
-The aim of testing implemented RBM was finding optimal hyperparameters (optimal model parameters) and calculate classification metrics. The most important metric for classification task is accuracy, that is, the percentage of right predictions. Accuracy was computed by comparing the label predicted by RBM classifier with the original label. Wrong predictions were counted.
+\subsection{Datasets}
+\par The main dataset used in the experiments was MNIST dataset of handwritten digit images. The images are 28 x 28 pixels, and the dataset is divided into 60,000 training cases and 10,000 test cases. The training set is further divided into a training set of 50,000 cases and a validation set of 10,000 cases. To have binary, the pixel intensities (0-255) were scaled (0-1) and binarized with threshold of 0.5. Another possible way to make data binary is to treat the pixel intensities as probabilities and sample from the given Bernoulli distribution for each pixel.
+
+
+%Tests were carried out on MNIST dataset, divided into training and test-sets. The data was binarized (with the binarization threshold of 0.5). 
+\section{Empirical Results for Discriminative RBM}
+This section describes the empirical results of a RBM trained with joint density model (the third approach of using RBM's for discrimination, described by Hinton \cite{Hinton}).
+\par The aim of testing implemented RBM was finding optimal hyperparameters (optimal model parameters) and calculate classification metrics. The choice of optimal hyperparameters was based on the observation of reconstruction error convergence. The experiments were done on the trainset of 100 cases in 100-epoch training. 
+\par The most important metric for classification task is accuracy, that is, the percentage of right predictions. Accuracy was computed by comparing the label predicted by RBM classifier with the original label. Wrong predictions were counted. 
+\subsection{The learning rate}
 \par The results from training an RBM with different learning rates are shown on the figure below.
 \begin{center}
-\includegraphics[width=16cm]{images/lr.png}
+\includegraphics[width=14cm]{images/lr.png}
 \captionof{figure}{Covergence comparison for different learning rates}  
 \end{center}
-Learning rate of a magnitude between $10^{-2}$ and $10^{-3}$ seems to be optimal. The exact optimal magnitude depends also on the training size, as tests on larger data sizes have shown (for example for smaller data sizes 0.1 was optimal, while for original sizes of 60000 - 0.01 was optimal).
-\par The second test was done on number of hidden units. As figure below shows, the higher the number of hidden units, the better convergence of reconstruction error. On the other hand, greater hidden layer size causes longer training time.
+Learning rate of a magnitude between $10^{-2}$ and $10^{-3}$ seems to be optimal. The exact optimal magnitude depends also on the training size, as tests on larger data sizes have shown (for example for smaller data sizes 0.1 was optimal, while for original sizes of 60000 - 0.01 was optimal). Additionally, too high learning rate (too high in relation to data size) caused instability and resulted in the reconstruction error increase (which is explained by Hinton \cite{Hinton} as a 'weight explosion').
+\subsection{The number of hidden units}
+\par The second test was done on number of hidden units. As figure below shows, the higher the number of hidden units, the better convergence of reconstruction error. On the other hand, greater hidden layer size causes longer training time (table).
 \begin{center}
-\includegraphics[width=16cm]{images/hu.png}
+\includegraphics[width=14cm]{images/hu.png}
 \captionof{figure}{Covergence comparison for different number of hidden units}  
 \end{center}
-\par number of steps for contrastive divergence algorithm.
-\par Experiments with momentum
-\par Original data and reconstructions with optimal hyperparameters
+
+\hspace{1cm}
+\begin{tabular}{|a|l|r|c|d|} \hline
+Hidden units & 100 & 400 & 700 & 1000
+\\ \hline
+Train time & 149.494s & 440.963s & 750.945s & 7658.844s
+\\ \hline
+MSE after 100 epochs & 26.981 & 5.887 & 4.149 & 3.457
+\\ \hline \end{tabular}
+\captionof{table}{Train time comparison for different number of hidden units. Times measured on PC Intel Pentium Dual CPU T3200 @2GHz, RAM 3 GB: CPU mean usage during test ~0.75, Memory mean usage: 2,3GB} 
+\subsection{The size of a mini batch}
+The mini-batch optimization procedure should use only a small number of training points for each gradient estimate: 1,5,10. Higher mini-batch sizes (such as half of training set - 50) results in relatively high reconstruction error (figure below). 
+\begin{center}
+\includegraphics[width=14cm]{images/batch.png}
+\captionof{figure}{Covergence comparison for different sizes of "mini-batches"}  
+\end{center}
+\hspace{1cm}
+\begin{tabular}{|a||l|r|c|d|} \hline
+Mini-batch size & 1 & 5 & 10 & 50
+\\ \hline
+Train time (n=100) & 1137.937s & 618.903s & 578.186s & 514.207s
+\\ \hline
+MSE after 100 epochs & 1.526 & 2.669 & 5.202 & 67.182
+\\ \hline \end{tabular}
+\captionof{table}{Train time and MSE comparison for different sizes of "mini-batch". Times measured on PC Intel Pentium Dual CPU T3200 @2GHz, RAM 3 GB: CPU mean usage during test ~0.75, Memory mean usage: 2,3GB} 
+Moreover, tests on classification accuracies on 50,000 training cases and 10,000 new cases have shown that size of ten (that is equal to the number of classes) seems to be optimal.
+\subsection{The initial values of the weights and biases}
+\begin{center}
+\includegraphics[width=14cm]{images/weights.png}
+\captionof{figure}{Covergence comparison for different initializations of weights}  
+\end{center}
+\subsection{Number of steps for contrastive divergence algorithm}
+All models of $CD_1$, $CD_2$ and $CD_3$ seem to be converging to the similar value, therefore, taking into account performance issues (higher number of contrastive divergence steps means longer training time - see table), it is sufficient to use one-step contrastive divergence algorithm.
+\begin{center}
+\includegraphics[width=14cm]{images/CDk.png}
+\captionof{figure}{Covergence comparison for different numbers of contrastive divergence steps}  
+\end{center}
+\hspace{1cm}
+\begin{tabular}{|a|l|r|c|} \hline
+k-step CD & $CD_1$ & $CD_2$ & $CD_3$ 
+\\ \hline
+Train time & 529.626s & 769.475s & 959.332s 
+\\ \hline
+MSE after 100 epochs & 5.242 & 4.971 & 4.894 
+\\ \hline \end{tabular}
+\captionof{table}{Train time and MSE comparison for different numbers of contrastive divergence steps. Times measured on PC Intel Pentium Dual CPU T3200 @2GHz, RAM 3 GB: CPU mean usage during test ~0.75, Memory mean usage: 2,3GB} 
+\subsection{Momentum}
 % Literature
 \begin{thebibliography}{9}
    \bibitem[1]{Hopfield} Hopfield, J.J. (1984) \emph{Neurons with graded response have collective computational properties like those of two-state neurons} (Proc. Natl. Acad. Sci. USA)
    \bibitem[2]{Hinton} Hinton, G. (2010) \emph{A Pratical Guide to Training Restricted Boltzmann Machines.} (UTML TR 2010-003)
+   \bibitem[3]{Fischer} Fischer, A., Igel, Ch. (2008) \emph{Training Restricted Boltzmann Machines: An Introduction.} 
    
 \end{thebibliography}
 \end{document}
