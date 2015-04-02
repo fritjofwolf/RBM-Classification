@@ -65,7 +65,7 @@ Joint density model assumes that RBM has two sets of visible units. Besides the 
 As a result of two sets of visible units, there are also two sets of weights: between data and hidden units ({\bf W}) and between label units and hidden units ({\bf U}). 
 \begin{center}
 \includegraphics[width=8cm]{images/jointProbModel.png}
-\captionof{figure}{Joint probability model of Restricted Boltzmann Machines}  
+\captionof{figure}{Joint probability model of Restricted Boltzmann Machines. Source: \cite{Larochelle}}  
 \end{center}
 Model learns joint probability distribution with n-step contrastive divergence (CD) algorithm (reconstruction step is performed n-times before updating weights). Training is performed on mini-batches of the training set. In terms of the CD algorithm, it means that weights are updated after estimating a gradient on a subset of training cases (a "mini-batch"), instead of on a one single training case. Such approach is known to be more efficient, because of possible use of CPU parallelism and multi-threading.
 \begin{center}
@@ -85,8 +85,27 @@ Model learns joint probability distribution with n-step contrastive divergence (
 %Tests were carried out on MNIST dataset, divided into training and test-sets. The data was binarized (with the binarization threshold of 0.5). 
 \section{Empirical Results for Discriminative RBM}
 This section describes the empirical results of a RBM trained with joint density model (the third approach of using RBM's for discrimination, described by Hinton \cite{Hinton}).
-\par The aim of testing implemented RBM was finding optimal hyperparameters (optimal model parameters) and calculate classification metrics. The choice of optimal hyperparameters was based on the observation of reconstruction error convergence. The experiments were done on the trainset of 100 cases in 100-epoch training. 
-\par The most important metric for classification task is accuracy, that is, the percentage of right predictions. Accuracy was computed by comparing the label predicted by RBM classifier with the original label. Wrong predictions were counted. 
+\par The first aim of testing implemented RBM was finding optimal hyperparameters (optimal model parameters) The choice of optimal hyperparameters was based on the observation of reconstruction error convergence. The experiments were done on the trainset of 100 cases in 100-epoch training. 
+\subsection{Monitoring progress of learning}
+As it is easy to compute the squared error between the data and the reconstructions, this quantity is often a good indicator of a progress of learning \cite{Hinton}. Within experiments on Discriminative RBM, MSE was printed out after each epoch, which allowed to observe the general progress or characteristic of learning and quickly notice any abnormalities and potential problems in hyperparameter settings. 
+While MSE is quite good and simple indicator of progress of learning, it is not the function that $CD_n$ is optimizing. The better indicator of what is happening during learning are graphic displays of learned filters. Plotting the weights of each unit as a gray-scale image after different numbers of epochs are shown on figures below. Filters highlight strong features in the data.
+% first column
+\begin{minipage}[t]{0.5\textwidth}
+\includegraphics[width=6cm]{images/filtry_1epoch_50train.png}
+\captionof{figure}{Learned filters after 1.\\
+epoch of training}
+\includegraphics[width=6cm]{images/filtry_10epoch_50train.png}
+\captionof{figure}{Learned filters after 10.\\
+epoch of training}
+\end{minipage}
+\begin{minipage}[t]{0.5\textwidth}
+\includegraphics[width=6cm]{images/filtry_5epoch_50train.png}
+\captionof{figure}{Learned filters after 5.\\
+epoch of training}
+\includegraphics[width=6cm]{images/filters_epoch500_train50.png}
+\captionof{figure}{Learned filters after 500.\\
+epoch of training}
+\end{minipage}
 \subsection{The learning rate}
 \par The results from training an RBM with different learning rates are shown on the figure below.
 \begin{center}
@@ -117,7 +136,7 @@ The mini-batch optimization procedure should use only a small number of training
 \captionof{figure}{Covergence comparison for different sizes of "mini-batches"}  
 \end{center}
 \hspace{1cm}
-\begin{tabular}{|a||l|r|c|d|} \hline
+\begin{tabular}{|a|l|r|c|d|} \hline
 Mini-batch size & 1 & 5 & 10 & 50
 \\ \hline
 Train time (n=100) & 1137.937s & 618.903s & 578.186s & 514.207s
@@ -127,6 +146,7 @@ MSE after 100 epochs & 1.526 & 2.669 & 5.202 & 67.182
 \captionof{table}{Train time and MSE comparison for different sizes of "mini-batch". Times measured on PC Intel Pentium Dual CPU T3200 @2GHz, RAM 3 GB: CPU mean usage during test ~0.75, Memory mean usage: 2,3GB} 
 Moreover, tests on classification accuracies on 50,000 training cases and 10,000 new cases have shown that size of ten (that is equal to the number of classes) seems to be optimal.
 \subsection{The initial values of the weights and biases}
+The weights are typically initialized to small random values chosen from a zero-mean Gaussian with a standard deviation of about 0.01. Test on initial weights with different initializations showed (see figure) that standard deviation of 0.1 features somehow better reconstruction error reduction that 0.01 and weights initialized to zeros.
 \begin{center}
 \includegraphics[width=14cm]{images/weights.png}
 \captionof{figure}{Covergence comparison for different initializations of weights}  
@@ -147,11 +167,39 @@ MSE after 100 epochs & 5.242 & 4.971 & 4.894
 \\ \hline \end{tabular}
 \captionof{table}{Train time and MSE comparison for different numbers of contrastive divergence steps. Times measured on PC Intel Pentium Dual CPU T3200 @2GHz, RAM 3 GB: CPU mean usage during test ~0.75, Memory mean usage: 2,3GB} 
 \subsection{Momentum}
+Momentum is a simple method for increasing the speed of learning \cite{Hinton}. The "momentum" meta-parameter is the fraction of the previous velocity that remains after computing the gradient on a new mini-batch. The momentum method causes the parameters to move in a direction that is not the direction of steepest descent, so it could be regarded as the temporal smoothing method. It is advised (\cite{Hinton} to start with a momentum of 0.5 and once the initial progress in the reduction of the reconstruction error settles down, increase it to 0.9. 
+\begin{center}
+\includegraphics[width=14cm]{images/momentum.png}
+\captionof{figure}{Covergence comparison for different momentum values}  
+\end{center}
+The basic test on three momentum values: 0, 0.5 and 0.9 showed that the best convergence and the smaleest reconstruction error is reached with momentum equal to zero. It also confirms that at least at the beginning of the training it is better to lower value of momentum, and possibly increase it while reduction in reconstruction error settles down. It could also be observed that higher values of momentum caused more oscillations in learning (see figure).
+\subsection{Reconstruction}
+After training process and choice of an optimal model, RBM can be used to show how well it performs on the new data. Images below show a sample original image and reconstructed data. The reconstruction error after 500 epoch training falls below 1.0.
+% first column
+\begin{minipage}[t]{0.5\textwidth}
+\includegraphics[width=6cm]{images/0original.png}
+\captionof{figure}{Original image}
+\end{minipage}
+\begin{minipage}[t]{0.5\textwidth}
+\includegraphics[width=6cm]{images/0_reconstructed_momentum00.png}
+\captionof{figure}{Image reconstructed after training in 500 epochs} 
+\end{minipage}
+\subsection{Classification}
+In the second step of experiment setup, classification metrics were computed. The most important metric for classification task is accuracy, that is, the percentage of right predictions. Accuracy was computed by comparing the label predicted by RBM classifier with the original label on test data. Wrong predictions were counted. Table below shows classification accuracy obtained with Discriminative RBM on original datasets (50,000 used for training, and 10,000 new cases on which accuracy was computed). The table shows also main hyper-parameters chosen for  training the model.
+\begin{center}
+\hspace{1cm}
+\begin{tabular}{|a|l|r|c|} \hline
+Accuracy & Learning rate & Hidden units & Training epoch 
+\\ \hline
+95,2 & 0.01 & 1000 & 100
+\\ \hline \end{tabular}
+\end{center}
+The main obstacle in testing classification accuracy with different parameters were long times of training (on personal computers training and testing on original-size MNIST dataset took days to complete one run).
 % Literature
 \begin{thebibliography}{9}
    \bibitem[1]{Hopfield} Hopfield, J.J. (1984) \emph{Neurons with graded response have collective computational properties like those of two-state neurons} (Proc. Natl. Acad. Sci. USA)
    \bibitem[2]{Hinton} Hinton, G. (2010) \emph{A Pratical Guide to Training Restricted Boltzmann Machines.} (UTML TR 2010-003)
    \bibitem[3]{Fischer} Fischer, A., Igel, Ch. (2008) \emph{Training Restricted Boltzmann Machines: An Introduction.} 
-   
+   \bibitem[4]{Larochelle} Larochelle H., Bengio, Y. (2008) \emph {Classification using Discriminative Restricted Boltzmann Machines} (Proceedings of the 25th International Conference on Machine Learning)
 \end{thebibliography}
 \end{document}

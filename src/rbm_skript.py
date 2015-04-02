@@ -46,13 +46,15 @@ results = []
     :param    binarizationThreshold - a threshold for binarization of data
     :param    batch size: size of minibatch 
     :param    lr: learning rate
+    :param    lr_var: boolean value indicating if lr will be varied during learning
     :param    scal: sampling from Gaussian distribution with mean=0 and std var = scal
     :param    nrHiddenUnits: number of hidden units
     :param    nrEpochs_p: number of training epochs
     :param    nrOfIter: number of iterations for sampling
     :param    randomState: random state used for random nr generating
     :param    errorThreshold: denotes stop condition for RBM training
-    :param    momentum_p
+    :param    momentum_p: momentum value
+    :param    momentum_var: boolean value indicating if momentum will be varied during learning
     :param    CDk_p: number of Gibbs step used by contrastive divergence 
         ...
 """       
@@ -67,6 +69,7 @@ def runTest(
             binarizationThreshold = 0.5,
             batch_size = 10,
             lr = 0.1,
+            lr_var = False,
             scal = 0.01,
             nrHiddenUnits_p = 500,
             nrEpochs_p = 100,
@@ -74,6 +77,7 @@ def runTest(
             randomState = 1234,
             errorThreshold = 5,
             momentum_p = 0.0,
+            momentum_var = False,
             CDk_p=1):
     
     #will modify the global variable
@@ -371,19 +375,19 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 with a different values for a chosen parameter """   
 def plotResults2(parameter = 'scal', 
                  val1 = 0,
-                 val2 = 0.1,
-                 val3 = 0.01,
-                 val4 = 50,
+                 val2 = 0.5,
+                 val3 = 0.9,
+                 #val4 = 50,
                 nr_epochs = 100):
     plt.figure()
-    plt.title('Convergence comparison for different weight initializations')
-    mswe1 = runTest(scal =val1, nrEpochs_p = nr_epochs)
-    plt.plot(mswe1, 'b', label='%0.2f' % val1)
-    mswe2 = runTest(scal=val2, nrEpochs_p = nr_epochs)
-    plt.plot(mswe2, 'g', label='%0.2f' % val2)
-    mswe3 = runTest(scal=val3, nrEpochs_p = nr_epochs)
-    plt.plot(mswe3, 'r', label='%0.2f' % val3)
-    #mswe4 = runTest(parameter=val4, nrEpochs_p = nr_epochs)
+    plt.title('Convergence comparison for different momentum values')
+    mswe1 = runTest(momentum_p =val1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe1, 'b', label='%0.1f' % val1)
+    mswe2 = runTest(momentum_p=val2, nrEpochs_p = nr_epochs)
+    plt.plot(mswe2, 'g', label='%0.1f' % val2)
+    mswe3 = runTest(momentum_p=val3, nrEpochs_p = nr_epochs)
+    plt.plot(mswe3, 'r', label='%0.1f' % val3)
+    #mswe4 = runTest(momentum=val4, nrEpochs_p = nr_epochs)
     #plt.plot(mswe4, 'k', label='%d' % val4)
 
     plt.legend(loc="best")
