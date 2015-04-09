@@ -23,10 +23,11 @@ class RBMType(Enum):
 class Dataset(Enum):
     MNIST = 'MNIST'
     CIFAR = 'CIFAR'
-
-DataType = Enum('binary',   #{0,1},
-                 'prob',     #<0;1> - for non-binary data 'normalization' is advised
-                 'real')    #any real value
+    
+class DataType(Enum):
+    binary = 'binary' #{0,1},
+    gaussian = 'gaussian' #<0;1> - for non-binary data 'normalization' is advised
+    binomial = 'binomial' #any real value
 
 TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
                              'epochNumber',        # number of iterations  
@@ -62,13 +63,14 @@ results = []
 def runTest(
             model = RBMType.joint.name,
             data = Dataset.MNIST.name,
+            dataType = DataType.binary.name,
             dFormat = 'pkl',
-            train_size = 100,
-            test_size = 100,
+            train_size = 10000,
+            test_size = 1000,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
-            lr = 0.1,
+            lr = 0.01,
             lr_var = False,
             scal = 0.01,
             nrHiddenUnits_p = 500,
@@ -97,7 +99,7 @@ def runTest(
             validX, validY = validationSet
             #testX, testY = testSet
             #case of binary data
-            if binary:
+            if (dataType == 'binary'):
                 trainX = binarize(trainX, threshold = binarizationThreshold)
                 #testX= binarize(trainX, threshold = binarizationThreshold)
                 validX= binarize(validX, threshold = binarizationThreshold)
@@ -117,7 +119,7 @@ def runTest(
             if dFormat =='csv':
                 dataSet = dataObj.readCSVDataFast(s=train_size)
                 trainY = dataSet[:train_size,0]
-                if binary:
+                if (dataType == 'binary'):
                     trainX = binarize(scale(dataSet[:train_size,1:]), 
                                       threshold = binarizationThreshold)
                 else:
@@ -125,9 +127,11 @@ def runTest(
         #Read test data from CSV
         testSet = dataObj.readCSVDataFast(datafile = 'data/mnist_test.csv', s=test_size)
         testY = testSet[:test_size,0]
-        if binary:
+        if (dataType == 'binary'):
             testX = binarize(scale(testSet[:test_size,1:]), 
                                     threshold = binarizationThreshold)
+        if (dataType == 'gaussian'):
+            testX = scale(testSet[:test_size,1:])
     # Case for CIFAR data
     if (data == 'CIFAR'):
         data_dict1 = loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
@@ -221,7 +225,7 @@ def runTest(
         print "Train time: %0.3fs" % train_time
         
         #Use return if plotResult function is called
-        return mEs
+        #return mEs
         """
         #Plot mean squared error on data within epochs
         plt.figure()
@@ -289,7 +293,8 @@ def runTest(
         """
         #print('Test')
         t3=time()
-        label = jRBM1.predict(testX,numOfIteration=nrOfIter)
+        #label = jRBM1.predict(testX,numOfIteration=nrOfIter)
+        label = jRBM1.predict2(testX)
         predict_time = time()-t3
         #count how many had wrong predicted label
         #also is wrong if more than one classes are predicted
@@ -375,18 +380,22 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 with a different values for a chosen parameter """   
 def plotResults2(parameter = 'scal', 
                  val1 = 0,
-                 val2 = 0.5,
-                 val3 = 0.9,
+                 val2 = 0.1,
+                 val3 = 0.01,
                  #val4 = 50,
                 nr_epochs = 100):
     plt.figure()
-    plt.title('Convergence comparison for different momentum values')
-    mswe1 = runTest(momentum_p =val1, nrEpochs_p = nr_epochs)
-    plt.plot(mswe1, 'b', label='%0.1f' % val1)
-    mswe2 = runTest(momentum_p=val2, nrEpochs_p = nr_epochs)
-    plt.plot(mswe2, 'g', label='%0.1f' % val2)
-    mswe3 = runTest(momentum_p=val3, nrEpochs_p = nr_epochs)
-    plt.plot(mswe3, 'r', label='%0.1f' % val3)
+    plt.title('Convergence comparison for different weights initialization')
+    mswe1 = runTest(scal =val1, nrEpochs_p = nr_epochs)
+    plt.plot(mswe1, 'b', label='%0.2f' % val1)
+    mswe2 = runTest(scal=val2, randomState = 9999, nrEpochs_p = nr_epochs)
+    plt.plot(mswe2, 'g--', label='%0.2f' % val2)
+    mswe3 = runTest(scal=val2, nrEpochs_p = nr_epochs)
+    plt.plot(mswe3, 'g', label='%0.2f' % val2)
+    mswe4 = runTest(scal=val3, nrEpochs_p = nr_epochs)
+    plt.plot(mswe4, 'r', label='%0.2f' % val3)
+    mswe5 = runTest(scal=val3, randomState = 9999, nrEpochs_p = nr_epochs)
+    plt.plot(mswe5, 'r--', label='%0.2f' % val3)
     #mswe4 = runTest(momentum=val4, nrEpochs_p = nr_epochs)
     #plt.plot(mswe4, 'k', label='%d' % val4)
 
@@ -437,8 +446,8 @@ def plotResults3():
         plt.text(-.3, i, c)
     
     plt.show()   
-#runTest();
+runTest();
 #simpleTest();
 #miscTest();
-plotResults2()
+#plotResults2()
 

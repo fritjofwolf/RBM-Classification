@@ -150,25 +150,6 @@ def scale(X):
 def saveData(outfile, data):
     np.savetxt(outfile, data, delimiter=",")
 
-# Plots a chart given np array of mswe over iterations for different models    
-def plotResults(mswe, model_selection):
-    mswe_lr1, mswe_lr2, mswe_nrH1, mswe_nrH2, mswe_nrS1, mswe_nrS2 = mswe
-    lr1,lr2, nrH1, nrH2,nrS1,nrS2   = model_selection
-    plt.figure()
-    plt.title('Convergence comparison of different models')
-    plt.plot(mswe_lr1, 'b', label='Model with learning rate=%.4f' % lr1)
-    plt.plot(mswe_lr2, 'b--', label='Model with learning rate=%.4f' % lr2)
-    plt.plot(mswe_nrH1, 'g', label='Model with nr Hidden Units=%.0f' % nrH1)
-    plt.plot(mswe_nrH2, 'g--', label='Model with nr Hidden Units=%.0f' % nrH2)
-    plt.plot(mswe_nrS1, 'r', label='Model with number of iterations for sampling =%.0f' % nrS1)
-    plt.plot(mswe_nrS2, 'r--', label='Model with number of iterations for sampling =%.0f' % nrS2)
-    plt.legend()
-    plt.grid()
-    plt.xlabel('Iterations')
-    plt.ylabel('Mean-squared weight error')
-    plt.show()
-
-
 """ Loads data from the CIFAR data set which can be downloaded under
 http://www.cs.toronto.edu/~kriz/cifar.html
 This data set consists of 60000 32x32 RGB images which belong

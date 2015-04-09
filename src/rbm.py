@@ -351,13 +351,6 @@ class Joint(RestrictedBoltzmannMachine):
                     hidden[i] = 1
                 else:
                     hidden[i] = 0
-            """        
-            for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
-                    visibleX[i] = 1
-                else:
-                    visibleX[i] = 0
-           """ 
             for i in range(self.NumOfTargetUnits):
                 if j == numOfIteration-1:
                     visibleY[i] = sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:]))
@@ -367,42 +360,6 @@ class Joint(RestrictedBoltzmannMachine):
                     else:
                         visibleY[i] = 0  
         return visibleY  
-    
-    """
-    Variation of sample methods which tests probability for given data input
-    against given label input
-    returns probabilities
-    """
-    #TODO
-    def sampleAgainst(self,testSampleX, testSampleY, numOfIteration):
-
-        visibleX = testSampleX
-        visibleY = testSampleY
-        hidden = np.zeros((self.NumOfHiddenUnits))
-        # Sample is computed by iteratively computing the activation of hidden and visible units
-        for j in range(numOfIteration):
-            for i in range(self.NumOfHiddenUnits):
-                if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleX,self.WeightsVH[:,i])+ np.inner(visibleY,self.WeightsTH[:,i])):
-                    hidden[i] = 1
-                else:
-                    hidden[i] = 0
-                   
-            for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
-                    visibleX[i] = 1
-                else:
-                    visibleX[i] = 0
-           
-            for i in range(self.NumOfTargetUnits):
-                if j == numOfIteration-1:
-                    visibleY[i] = sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:]))
-                else:
-                    if np.random.random() < sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:])):
-                        visibleY[i] = 1
-                    else:
-                        visibleY[i] = 0  
-                    
-        return visibleY 
     
     """
     Performs classification on given dataset
@@ -420,6 +377,40 @@ class Joint(RestrictedBoltzmannMachine):
                     #print labels[i] 
             #returns label that has the highest prob
             labels[i] = reconY.argmax(axis=0) 
+        return labels
+    
+    # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...") 
+    # Overrides method in the main class     
+    def compute_free_energy(self, visibleX, visibleY):
+        x = np.zeros(len(visibleX))
+        for j in range(self.NumOfHiddenUnits):
+            x[j] = self.HiddenBiases[j] + np.inner(np.transpose(visibleX),self.WeightsVH[:,j])+ np.inner(np.transpose(visibleY),self.WeightsTH[:,j])
+        return (-np.inner(visibleX,self.VisibleBiases) - sum([max(0,x[i]) for i in range(len(x))]))
+    
+    """
+    Performs classification on given dataset
+    uses free energy method (Hinton, p.17)
+    return predicted labels
+    """
+    def predict2(self,testsetX):
+        labels = np.zeros(len(testsetX))
+        #print testsetX.shape
+        for i in range(len(testsetX)):
+            min_fe = 99999
+            label_min_fe=None
+            visibleX = testsetX[i]
+            #for each label
+            for j in range(self.NumOfTargetUnits):
+                visibleY = np.zeros(self.NumOfTargetUnits)
+                visibleY[j] = 1
+                #print visibleY
+                #compute free energy
+                fe = self.compute_free_energy(visibleX, visibleY)
+                if fe < min_fe:
+                    min_fe = fe
+                    label_min_fe = j
+            #returns label with minimal free energy
+            labels[i] = label_min_fe
         return labels
 
 """
