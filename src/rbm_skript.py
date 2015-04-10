@@ -1,8 +1,13 @@
-from rbm import RestrictedBoltzmannMachine as RBM, Joint as jRBM
+#Main module for performing different tests
+#for different RBM models
+#and different datasets
+
+from rbm import RestrictedBoltzmannMachine as RBM, Joint as jRBM, BinomialRestrictedBoltzmannMachine as rbmb
 from data import *
 from utils import tile_raster_images
 import os
 import math
+import scipy
 import numpy as np
 from time import time
 # if python < 3.4  -> pip install enum34
@@ -29,17 +34,20 @@ class DataType(Enum):
     gaussian = 'gaussian' #<0;1> - for non-binary data 'normalization' is advised
     binomial = 'binomial' #any real value
 
-TerminationCondition = Enum ('errorThreshold',   #threshold for squared error
-                             'epochNumber',        # number of iterations  
-                )
+class TerminationCondition(Enum):
+    errThresh = 'errorThreshold'   #threshold for squared error
+    epochNumber= 'epochNumber'        # number of iterations  
+
 #global structure to store metrics across different test runs
 results = [] 
 
 """
     Runs a test for a given RBM model, dataset (classification problem), 
-    and specified hyperparameters:
+    specified model hyperparameters and testrun parameters:
     :param    model: model of RBM to use: 'generative', 'joint' or 'discriminative'
     :param    data: specifies on which dataset to run a test: 'MNIST', 'CIFAR'
+    :param    train_data_path: specifies relative path to file with train data
+    :param    test_data_path: specifies relative path to file with test data
     :param    dFormat: specifies source data format 'pkl' or 'csv'
     :param    train_size: specifies number of samples from dataset to train 
     :param    test_size: specifies number of samples from dataset to test
@@ -57,51 +65,64 @@ results = []
     :param    momentum_p: momentum value
     :param    momentum_var: boolean value indicating if momentum will be varied during learning
     :param    CDk_p: number of Gibbs step used by contrastive divergence 
+    :param    CDk_var: boolean value indicating if k for CD will be varied during learning
+    :param    returnMSE: boolean value indicating if test run should return mse after training
+    :param    plotMSE: boolean value indicating if MSE should be plotted
+    :param    showRec: boolean value indicating if example reconstruction should be displayed
+    :param    showFilt: boolean value indicating if filters should be displayed
+    :param    predictMethod: 1 - based on sampling target units, 2 - based on free energy computation
         ...
 """       
 
 def runTest(
             model = RBMType.joint.name,
             data = Dataset.MNIST.name,
+            train_data_path = 'data/mnist.pkl.gz',
+            test_data_path = 'data/mnist_test.csv',
             dataType = DataType.binary.name,
             dFormat = 'pkl',
-            train_size = 10000,
-            test_size = 1000,
+            train_size = 100,
+            test_size = 10000,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
-            lr = 0.01,
+            lr = 0.1,
             lr_var = False,
-            scal = 0.01,
-            nrHiddenUnits_p = 500,
+            scal = 0.1,
+            nrHiddenUnits_p = 1000,
             nrEpochs_p = 100,
             nrOfIter = 1000,
             randomState = 1234,
             errorThreshold = 5,
             momentum_p = 0.0,
             momentum_var = False,
-            CDk_p=1):
+            CDk_p=1,
+            CDk_var = False,
+            returnMSE=False,
+            plotMSE=True,
+            showRec=False,
+            showFilt=False,
+            predictMethod=2):
     
     #will modify the global variable
     global results
-    # Generate random state
+    # Generate random state to ensure deterministic, repeatable runs
     rnGen = np.random.RandomState(randomState)
     
     # Read specified dataset from source files
+    print('Reading data...')
     t0=time()
     # Case for MNIST data
     if (data == 'MNIST'):
         dataObj = MNIST();
         # Case of reading from cPickle format
         if dFormat == 'pkl':
-            trainingSet, validationSet, testSet = dataObj.loadData()
+            trainingSet, validationSet, testSet = dataObj.loadData(datafile = train_data_path)
             trainX, trainY = trainingSet
             validX, validY = validationSet
-            #testX, testY = testSet
             #case of binary data
             if (dataType == 'binary'):
                 trainX = binarize(trainX, threshold = binarizationThreshold)
-                #testX= binarize(trainX, threshold = binarizationThreshold)
                 validX= binarize(validX, threshold = binarizationThreshold)
             if (train_size > 50000):
                 trainX= np.concatenate((trainX, validX))
@@ -109,23 +130,23 @@ def runTest(
             
             trainX = trainX[:train_size]
             trainY = trainY[:train_size]
-            #testX = testX[:test_size]
-            #testY = testY[:test_size]
+            # if using validation set as testing set
             #validX = validX[:test_size]
             #validY = validY[:test_size]
             
         else:
             #Case of reading from CSV
             if dFormat =='csv':
-                dataSet = dataObj.readCSVDataFast(s=train_size)
+                dataSet = dataObj.readCSVDataFast(s=train_size, datafile = train_data_path)
                 trainY = dataSet[:train_size,0]
                 if (dataType == 'binary'):
                     trainX = binarize(scale(dataSet[:train_size,1:]), 
                                       threshold = binarizationThreshold)
                 else:
                     trainX = scale(dataSet[:train_size,1:])
-        #Read test data from CSV
-        testSet = dataObj.readCSVDataFast(datafile = 'data/mnist_test.csv', s=test_size)
+        
+        #Test data are read from csv anyway
+        testSet = dataObj.readCSVDataFast(datafile = test_data_path, s=test_size)
         testY = testSet[:test_size,0]
         if (dataType == 'binary'):
             testX = binarize(scale(testSet[:test_size,1:]), 
@@ -155,10 +176,19 @@ def runTest(
         read_time = time() - t0
         #print labels
         #data.plotCIFAR(examples[0,:])
-        print "Data read"
+        print "CIFAR data read"
     
+    if(model == 'binomial'): 
+        #initialize binomial RBM
+        bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,300,None)
+        print('Training binomial model of RBM...')
+        bRBM.train(examples,labels,labels[0],0.1,5)
+        print "RBM trained"
+        print('Sampling from binomial model of RBM...')
+        data.plot(bRBM.sample(1000))
     #Initialize a chosen RBM model and perform train and sample operations
     if(model == 'generative'): 
+        print('Training generative model of RBM...')
         nrVisibleUnits = len(trainX[1]);
         RBM1 = RBM(nrVisibleUnits, nrHiddenUnits_p, scal = scal, binary=binary, 
                    rnGen=rnGen)
@@ -167,7 +197,8 @@ def runTest(
         train_time = time() - t1
         print("Read data time: %0.3fs" % read_time)
         print("Train time: %0.3fs" % train_time) 
-            
+        
+        print('Perform sampling...')   
         t2=time()
         example = RBM1.sample(nrOfIter)
         sample_time = time() - t2
@@ -176,29 +207,23 @@ def runTest(
         #dataObj.visualize(RBM1.sample(nrOfIter))
     
     if(model == 'joint'):
-        #print('Joint')
-        #transform training labels using LabelBinarization to model joint probabilities
+        #transform training labels using LabelBinarization to binary vector
         trainY = dataObj.transformLabel(trainY)
-        #print (trainY)[0]
-        #concatenate trainX and binarized trainY into one np array
-        #trainSet = np.concatenate([trainX,trainY], axis=1)
-        #print trainSet.shape
+        # set number of visible and target units
         nrVisibleUnits = len(trainX[1])
         nrTargetUnits = len(trainY[1])
-        #print nrVisibleUnits
-        #Nr of visible units is 784 + 10 = 794
         #split the training set into mini-batches of batch_size
         numOfBatches = trainX.shape[0] / batch_size
-        #print numOfBatches
         #initialize jRBM
         jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, 
                      scal = scal, binary=binary, rnGen=rnGen)
         epoch = 0
+        #initialize mean errors on data and labels
         mErrorX = 0
         mErrorY = 0
         mEs = np.zeros(nrEpochs_p+1)
         #for each epoch 
-        #print('Train')
+        print('Training joint-probabilities model of RBM...')
         t1 = time()
         while epoch < nrEpochs_p:
             t2 = time()
@@ -210,7 +235,12 @@ def runTest(
                 batchX = trainX[i*batch_size:((i*batch_size)+batch_size)]
                 batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
                 #perform train on this batch and update weights globally
-                gWVH, gWTH, gV, gT, gH, eX, eY = jRBM1.train(batchX, batchY, errorThreshold, k=CDk_p )
+                gWVH, gWTH, gV, gT, gH, eX, eY = jRBM1.train(batchX, batchY, errorThreshold, k=CDk_p)
+                if lr_var:
+                    if epoch > 60:
+                        lr = 0.005
+                    #if epoch > 80:
+                        #lr = 0.5
                 jRBM1.updateWeight(lr, gWVH, gWTH, gV, gT, gH ,momentum = momentum_p)
                 mErrorX += eX
                 mErrorY += eY
@@ -225,93 +255,99 @@ def runTest(
         print "Train time: %0.3fs" % train_time
         
         #Use return if plotResult function is called
-        #return mEs
-        """
-        #Plot mean squared error on data within epochs
-        plt.figure()
-        plt.title('Mean squared error for epochs')
-        plt.plot(mEs, 'b', label='Model with learning rate=%.4f' % lr)
-        plt.legend()
-        plt.grid()
-        plt.xlabel('Epoch')
-        plt.ylabel('Mean-squared weight error')
-        plt.xlim(xmin=1)
-        plt.show()
-       
-        # Plot filters after training 
-        # Construct image from the weight matrix
-        image = Image.fromarray(
-            tile_raster_images(
-                X=jRBM1.WeightsVH.T,
-                img_shape=(28, 28),
-                tile_shape=(10, 10),
-                tile_spacing=(1, 1)
+        if returnMSE:
+            return mEs
+        
+        if plotMSE:
+            #Plot mean squared error on data within epochs
+            plt.figure()
+            plt.title('Mean squared error for epochs')
+            plt.plot(mEs, 'b', label='Model with varied learning rate')
+            plt.legend()
+            plt.grid()
+            plt.xlabel('Epoch')
+            plt.ylabel('Mean-squared weight error')
+            plt.xlim(xmin=1)
+            plt.show()
+        
+        if showFilt:
+            # Plot filters after training 
+            # Construct image from the weight matrix
+            image = Image.fromarray(
+                tile_raster_images(
+                    X=jRBM1.WeightsVH.T,
+                    img_shape=(28, 28),
+                    tile_shape=(10, 10),
+                    tile_spacing=(1, 1)
+                )
             )
-        )
-        image.show()
+            image.show()
+
         
-        
-        #Do sampling for one case of unseen data
-        for i in train_size:
+        if showRec:
+            #Do sampling for one case of unseen data
+            for i in train_size:
+                
+            #dataObj.plot(trainX[59999])
+                print "Original label: %d" % trainY[i]
+            #dataObj.plot(validX[9998])
+            #print "Original label: %d" % validY[9998]
+            #validY = dataObj.transformLabel(validY)
             
-        #dataObj.plot(trainX[59999])
-            print "Original label: %d" % trainY[i]
-        #dataObj.plot(validX[9998])
-        #print "Original label: %d" % validY[9998]
-        #validY = dataObj.transformLabel(validY)
-        
-        t2=time()
-        reconstructedY = jRBM1.sample(validX[0], nrOfIter)
-        print reconstructedY
-        #print reconstructedY.argmax(axis=0)
-        sample_time = time() - t2
-        print("Sampling time: %0.3fs" % sample_time) 
-        #dataObj.plot(reconstructedX)
-        label = dataObj.inverseTransformLabel(reconstructedY)
-        #label = reconstructedY.argmax(axis=0)
-        print "Reconstructed label: %d" % label
-        #print "Reconstructed label:"
-        
-        #for i in range(len(reconstructedY)):
-            #if reconstructedY[i] == 1:
-                #print i
-       
-        reconstructedY = jRBM1.sample(validX[2], nrOfIter)
-        print "Reconstructed label:"
-        print reconstructedY
-        label = dataObj.inverseTransformLabel(reconstructedY)
-        #print label
-        print "Reconstructed label: %d" % label
-        #for i in range(len(reconstructedY)):
-            #if reconstructedY[i] == 1:
-                #print i
-        
-        #Compute classification error
-        #lb2, validY = dataObj.transformLabel(validY)
-        #for i in range(len(validX[0:3])):
-            #dataObj.plot(validX[i])
-        """
-        #print('Test')
+            t2=time()
+            reconstructedY = jRBM1.sample(validX[0], nrOfIter)
+            print reconstructedY
+            #print reconstructedY.argmax(axis=0)
+            sample_time = time() - t2
+            print("Sampling time: %0.3fs" % sample_time) 
+            #dataObj.plot(reconstructedX)
+            label = dataObj.inverseTransformLabel(reconstructedY)
+            #label = reconstructedY.argmax(axis=0)
+            print "Reconstructed label: %d" % label
+            #print "Reconstructed label:"
+            
+            #for i in range(len(reconstructedY)):
+                #if reconstructedY[i] == 1:
+                    #print i
+           
+            reconstructedY = jRBM1.sample(validX[2], nrOfIter)
+            print "Reconstructed label:"
+            print reconstructedY
+            label = dataObj.inverseTransformLabel(reconstructedY)
+            #print label
+            print "Reconstructed label: %d" % label
+            #for i in range(len(reconstructedY)):
+                #if reconstructedY[i] == 1:
+                    #print i
+            
+        #Compute classification error   
+        print('Performing classification on test data...')
         t3=time()
-        #label = jRBM1.predict(testX,numOfIteration=nrOfIter)
-        label = jRBM1.predict2(testX)
+        if (predictMethod == 1):
+            label = jRBM1.predict(testX,numOfIteration=nrOfIter)
+        else:
+            label = jRBM1.predict2(testX)
         predict_time = time()-t3
         #count how many had wrong predicted label
-        #also is wrong if more than one classes are predicted
-        #trainY = dataObj.
         #trainY = dataObj.inverseTransformLabel(trainY, set=True)
         #print trainY
         counter = 0
         for i in range(len(label)):
             #print "Reconstrlabel is %f, original label is%f" % (label[i],testY[i]) 
             if label[i] != testY[i]:
+                test_data = testX[i]
                 counter +=1
-        acc = 1 - (counter / float(len(label)))
-        #print counter / float(len(label))
-        #print counter
+                #print wrongly predicted
+                #print "Reconstrlabel is %f, original label is%f" % (label[i],testY[i]) 
+                #save wrongly predicted
+                scipy.misc.imsave('sample_pictures/wrong_' + str(testY[i]) + 
+                                  '_predicted_as_'+ str(label[i]) +'.png', 
+                                  test_data.reshape(28,28))
+        err = counter / float(len(label))
+        acc = 1 - err
+        print "Classification error is %0.3f" % err
         print "Accuracy is %0.3f" % acc
         print "Prediction time is %0.3fs" % predict_time
-        
         # save results to plot later
         results.append((acc, train_time, predict_time))
         
@@ -337,7 +373,7 @@ def simpleTest():
 def miscTest():
     #Checking current working directory and relative path 
     print os.getcwd()
-    print os.path.relpath('C:\Users\Katarzyna Tarnowska\git\RBM-Classification4\data\mnist_test.csv')
+    #print os.path.relpath('')
     #print (RBMType.generative.name)
     
 """Function that plots and compares MSE for training 
@@ -379,23 +415,21 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 """Function that plots and compares MSE for training 
 with a different values for a chosen parameter """   
 def plotResults2(parameter = 'scal', 
-                 val1 = 0,
+                 val1 = 0.5,
                  val2 = 0.1,
-                 val3 = 0.01,
-                 #val4 = 50,
+                 val3 = 0.05,
+                 val4 = 0.1,
                 nr_epochs = 100):
     plt.figure()
     plt.title('Convergence comparison for different weights initialization')
-    mswe1 = runTest(scal =val1, nrEpochs_p = nr_epochs)
+    mswe1 = runTest(lr =val1, nrEpochs_p = nr_epochs, returnMSE = True)
     plt.plot(mswe1, 'b', label='%0.2f' % val1)
-    mswe2 = runTest(scal=val2, randomState = 9999, nrEpochs_p = nr_epochs)
-    plt.plot(mswe2, 'g--', label='%0.2f' % val2)
-    mswe3 = runTest(scal=val2, nrEpochs_p = nr_epochs)
-    plt.plot(mswe3, 'g', label='%0.2f' % val2)
-    mswe4 = runTest(scal=val3, nrEpochs_p = nr_epochs)
-    plt.plot(mswe4, 'r', label='%0.2f' % val3)
-    mswe5 = runTest(scal=val3, randomState = 9999, nrEpochs_p = nr_epochs)
-    plt.plot(mswe5, 'r--', label='%0.2f' % val3)
+    mswe2 = runTest(lr=val2, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe2, 'g', label='%0.2f' % val2)
+    mswe3 = runTest(lr=val3, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe3, 'r', label='%0.2f' % val3)
+    mswe4 = runTest(lr=val4, lr_var=True,nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe4, 'b--', label='varied')
     #mswe4 = runTest(momentum=val4, nrEpochs_p = nr_epochs)
     #plt.plot(mswe4, 'k', label='%d' % val4)
 
@@ -409,33 +443,36 @@ def plotResults2(parameter = 'scal',
 
 """Function that plots bar chart
 and compares accuracy and times metrics for the chosen model """  
-def plotResults3():
+def compareMetrics():
     names=[]
     for val, name in (
-        (100, "Hidden units=100"),
-        (400, "Hidden units=400"),
-        (700, "Hidden units=700")):
+        (1, "Based on sampling target units"),
+        #(Predicts2, "Computing free energy"),
+        (2, "Based on computing free energy")):
         print('=' * 80)
         print(name)
         names.append((name))
-        runTest(nrHiddenUnits_p=val)
+        #runTest(nrHiddenUnits_p=val)
     
     # make some plots
     global results
     indices = np.arange(len(results))
     #indices = 1
     
-    results = [[x[i] for x in results] for i in range(3)]
+    results = [[x[i] for x in results] for i in range(2)]
+    #results=[[0.5,196.284][0.7, 1.407]]
     
-    acc, train_time, predict_time = results
-    train_time = np.array(train_time) / np.max(train_time)
+    #acc, train_time, predict_time = results
+    acc, predict_time = results
+    #train_time = np.array(train_time) / np.max(train_time)
     predict_time = np.array(predict_time) / np.max(predict_time)
     
     plt.figure(figsize=(12, 8))
-    plt.title("Classification metrics")
+    plt.title("Classification metrics for 100 trainset and 10 testset")
     plt.barh(indices, acc, .2, label="accuracy", color='r')
-    plt.barh(indices + .3, train_time, .2, label="train time", color='g')
-    plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
+    plt.barh(indices + .3, predict_time, .2, label="predict time", color='b')
+    #plt.barh(indices + .3, train_time, .2, label="train time", color='g')
+    #plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
     plt.yticks(())
     plt.legend(loc='best')
     plt.subplots_adjust(left=.25)
@@ -446,8 +483,10 @@ def plotResults3():
         plt.text(-.3, i, c)
     
     plt.show()   
-runTest();
+
+#runTest();
 #simpleTest();
 #miscTest();
-#plotResults2()
+plotResults2()
+#compareMetrics();
 

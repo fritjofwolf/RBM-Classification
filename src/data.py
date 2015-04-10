@@ -111,11 +111,6 @@ class MNIST(object):
     def printData(self,td):
         print 'MNIST data:', td
     
-    #Generates set few times bigger by adding similar data 
-    def nudge_dataset(self,X, Y):
-        # TO DO optionally
-        return (X,Y)
-    
     #Shows an image of the MNIST dataset given as a binary vector 
     def visualize(self, example):
         counter = 0
