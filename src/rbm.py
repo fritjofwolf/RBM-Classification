@@ -430,16 +430,6 @@ class Discriminative(Joint):
         weightDecay='l2', momentum=0.5, stopCondition='epochNumber', 
         nrEpochs=10000):
         pass
-            
-    """
-    Predicts class number based on input data
-    After training, each possible label is tried in turn with a test vector 
-    and the one that gives lowest free energy is chosen as the most likely class
-    """
-    def predictClass(self, inputData):
-        #TODO
-        label=0
-        return label
 """    
 Model of a RBM whose visible units are binomial units, i.e. they can 
 model an integer between 0 and N

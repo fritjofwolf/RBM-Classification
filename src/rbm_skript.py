@@ -9,6 +9,7 @@ import os
 import math
 import scipy
 import numpy as np
+from sklearn.metrics import confusion_matrix, classification_report
 from time import time
 # if python < 3.4  -> pip install enum34
 from enum import Enum
@@ -57,6 +58,7 @@ results = []
     :param    lr: learning rate
     :param    lr_var: boolean value indicating if lr will be varied during learning
     :param    scal: sampling from Gaussian distribution with mean=0 and std var = scal
+    :param    initBiasZero: if biases are initialized to zeros
     :param    nrHiddenUnits: number of hidden units
     :param    nrEpochs_p: number of training epochs
     :param    nrOfIter: number of iterations for sampling
@@ -71,6 +73,7 @@ results = []
     :param    showRec: boolean value indicating if example reconstruction should be displayed
     :param    showFilt: boolean value indicating if filters should be displayed
     :param    predictMethod: 1 - based on sampling target units, 2 - based on free energy computation
+    
         ...
 """       
 
@@ -81,15 +84,16 @@ def runTest(
             test_data_path = 'data/mnist_test.csv',
             dataType = DataType.binary.name,
             dFormat = 'pkl',
-            train_size = 100,
-            test_size = 10000,
+            train_size = 10000,
+            test_size = 1000,
             binary = True,
             binarizationThreshold = 0.5,
             batch_size = 10,
-            lr = 0.1,
+            lr = 0.01,
             lr_var = False,
-            scal = 0.1,
-            nrHiddenUnits_p = 1000,
+            scal = 0.01,
+            initBiasZero=False,
+            nrHiddenUnits_p = 700,
             nrEpochs_p = 100,
             nrOfIter = 1000,
             randomState = 1234,
@@ -99,7 +103,7 @@ def runTest(
             CDk_p=1,
             CDk_var = False,
             returnMSE=False,
-            plotMSE=True,
+            plotMSE=False,
             showRec=False,
             showFilt=False,
             predictMethod=2):
@@ -216,7 +220,8 @@ def runTest(
         numOfBatches = trainX.shape[0] / batch_size
         #initialize jRBM
         jRBM1 = jRBM(nrVisibleUnits, nrHiddenUnits_p, nrTargetUnits, 
-                     scal = scal, binary=binary, rnGen=rnGen)
+                     scal = scal, binary=binary, rnGen=rnGen, 
+                     initBiasZero=initBiasZero)
         epoch = 0
         #initialize mean errors on data and labels
         mErrorX = 0
@@ -228,6 +233,11 @@ def runTest(
         while epoch < nrEpochs_p:
             t2 = time()
             epoch += 1
+            if lr_var:
+                    if epoch > 0.6 * nrEpochs_p:
+                        lr = lr/10
+                    if epoch > 0.8 * nrEpochs_p:
+                        lr = lr/100
         #perform training based on CD for each minibatch
             for i in range(numOfBatches):
                 #iterate to next batch
@@ -236,11 +246,7 @@ def runTest(
                 batchY = trainY[i*batch_size:((i*batch_size)+batch_size)]
                 #perform train on this batch and update weights globally
                 gWVH, gWTH, gV, gT, gH, eX, eY = jRBM1.train(batchX, batchY, errorThreshold, k=CDk_p)
-                if lr_var:
-                    if epoch > 60:
-                        lr = 0.005
-                    #if epoch > 80:
-                        #lr = 0.5
+                
                 jRBM1.updateWeight(lr, gWVH, gWTH, gV, gT, gH ,momentum = momentum_p)
                 mErrorX += eX
                 mErrorY += eY
@@ -347,6 +353,10 @@ def runTest(
         acc = 1 - err
         print "Classification error is %0.3f" % err
         print "Accuracy is %0.3f" % acc
+        print "Confusion matrix:" 
+        print  confusion_matrix(label.astype(int),testY.astype(int))
+        print "Classification report:" 
+        print  classification_report(label.astype(int),testY.astype(int))
         print "Prediction time is %0.3fs" % predict_time
         # save results to plot later
         results.append((acc, train_time, predict_time))
@@ -415,21 +425,21 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 """Function that plots and compares MSE for training 
 with a different values for a chosen parameter """   
 def plotResults2(parameter = 'scal', 
-                 val1 = 0.5,
-                 val2 = 0.1,
-                 val3 = 0.05,
-                 val4 = 0.1,
+                 val1 = 0.1,
+                 val2 = 0.01,
+                 #val3 = 0.05,
+                 #val4 = 0.5,
                 nr_epochs = 100):
     plt.figure()
-    plt.title('Convergence comparison for different weights initialization')
+    plt.title('Convergence comparison for different bias initializations')
     mswe1 = runTest(lr =val1, nrEpochs_p = nr_epochs, returnMSE = True)
     plt.plot(mswe1, 'b', label='%0.2f' % val1)
     mswe2 = runTest(lr=val2, nrEpochs_p = nr_epochs, returnMSE = True)
     plt.plot(mswe2, 'g', label='%0.2f' % val2)
-    mswe3 = runTest(lr=val3, nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe3, 'r', label='%0.2f' % val3)
-    mswe4 = runTest(lr=val4, lr_var=True,nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe4, 'b--', label='varied')
+    mswe3 = runTest(lr=val1, initBiasZero=True, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe3, 'b--', label='%0.2f, biases to zero' % val1)
+    mswe4 = runTest(lr=val2, initBiasZero=True,nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe4, 'g--', label='%0.2f, biases to zero' % val2)
     #mswe4 = runTest(momentum=val4, nrEpochs_p = nr_epochs)
     #plt.plot(mswe4, 'k', label='%d' % val4)
 
@@ -446,33 +456,30 @@ and compares accuracy and times metrics for the chosen model """
 def compareMetrics():
     names=[]
     for val, name in (
-        (1, "Based on sampling target units"),
-        #(Predicts2, "Computing free energy"),
-        (2, "Based on computing free energy")):
+        (100, "Hidden units=100"),
+        (400, "Hidden units=400"),
+        (700, "Hidden units=700")):
         print('=' * 80)
         print(name)
         names.append((name))
-        #runTest(nrHiddenUnits_p=val)
+        runTest(nrHiddenUnits_p=val)
     
     # make some plots
     global results
     indices = np.arange(len(results))
     #indices = 1
     
-    results = [[x[i] for x in results] for i in range(2)]
-    #results=[[0.5,196.284][0.7, 1.407]]
+    results = [[x[i] for x in results] for i in range(3)]
     
-    #acc, train_time, predict_time = results
-    acc, predict_time = results
-    #train_time = np.array(train_time) / np.max(train_time)
+    acc, train_time, predict_time = results
+    train_time = np.array(train_time) / np.max(train_time)
     predict_time = np.array(predict_time) / np.max(predict_time)
     
     plt.figure(figsize=(12, 8))
-    plt.title("Classification metrics for 100 trainset and 10 testset")
+    plt.title("Classification metrics")
     plt.barh(indices, acc, .2, label="accuracy", color='r')
-    plt.barh(indices + .3, predict_time, .2, label="predict time", color='b')
-    #plt.barh(indices + .3, train_time, .2, label="train time", color='g')
-    #plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
+    plt.barh(indices + .3, train_time, .2, label="train time", color='g')
+    plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
     plt.yticks(())
     plt.legend(loc='best')
     plt.subplots_adjust(left=.25)
@@ -482,11 +489,11 @@ def compareMetrics():
     for i, c in zip(indices, names):
         plt.text(-.3, i, c)
     
-    plt.show()   
+    plt.show()  
 
-#runTest();
+runTest();
 #simpleTest();
 #miscTest();
-plotResults2()
+#plotResults2()
 #compareMetrics();
 

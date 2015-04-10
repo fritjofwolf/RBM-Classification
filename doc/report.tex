@@ -34,17 +34,22 @@
 
 \begin{document}
 % Title
-\title{Classification using Restricted Boltzmann Machines}
+\title{Classification with Restricted Boltzmann Machines}
 \author{Katarzyna Tarnowska \and Fritjof Wolf}
 \maketitle
 \newpage
 % Abstract
 \begin{abstract}
-\textbf{Abstract:} 
+\textbf{Abstract:}
+The aim of the project was to implement Restricted Boltzmann Machines as classifier and examine what effect different parameters have on the performance. Chosen classification problem was character/image recognition. The implementation was trained and tested on the MNIST and CIFAR-10 datasets using Contrastive Divergence learning algorithm. 
 \end{abstract}
 
 % Textbody
-\section{Introduction}
+\section{Theoretical introduction}
+\begin{center}
+\includegraphics[width=4cm]{images/rbm.png}
+\captionof{figure}{Restricted Boltzmann Machines}  
+\end{center} 
 ...
 Hinton \cite{Hinton} describes three approaches to using Restricted Boltzmann Machines for classification task:
 \begin{itemize}
@@ -68,10 +73,10 @@ As a result of two sets of visible units, there are also two sets of weights: be
 \captionof{figure}{Joint probability model of Restricted Boltzmann Machines. Source: \cite{Larochelle}}  
 \end{center}
 Model learns joint probability distribution with n-step contrastive divergence (CD) algorithm (reconstruction step is performed n-times before updating weights). Training is performed on mini-batches of the training set. In terms of the CD algorithm, it means that weights are updated after estimating a gradient on a subset of training cases (a "mini-batch"), instead of on a one single training case. Such approach is known to be more efficient, because of possible use of CPU parallelism and multi-threading.
-%\begin{center}
-%\includegraphics[width=10cm]{images/trainRBM.png}
-%\captionof{figure}{Illustration of n-step contrastive divergence algorithm}  
-%\end{center} 
+\begin{center}
+\includegraphics[width=12cm]{images/cd-n.png}
+\captionof{figure}{Illustration of n-step contrastive divergence algorithm}  
+\end{center} 
 \par Class prediction is done by choosing the most likely label given the input, under the learned model. In more detail, it fixes the visible units corresponding to the test data input and samples target units, with the use of learned weights. In the last sampling iteration the target units are set to probabilities values instead of stochastic binary units. The predicted class is the position in the binary vector with the highest probability. 
 \begin{center}
 \includegraphics[width=12cm]{images/DRBM.png}
@@ -79,7 +84,7 @@ Model learns joint probability distribution with n-step contrastive divergence (
 \end{center}
 Another approach for class prediction is based on computation of free energy \cite{Hinton}. After training, a test vector is tried with each label, and the one that gives lowest free energy is chosen as the most likely class ('test-against-all-labels' prediction approach for DRBM).
 
-\subsection{Datasets}
+\subsection{Classification problem}
 \par The main dataset used in the experiments was MNIST dataset of handwritten digit images. The dataset is widely used for training and testing in the field of machine learning. The images are 28 x 28 pixels, and the dataset is divided into 60,000 training cases and 10,000 test cases. The training set is further divided into a training set of 50,000 cases and a validation set of 10,000 cases. The validation set is used to perform model selection and hyper-parameter selection, whereas the test set is used to evaluate the final generalization error and compare different algorithms in an unbiased way.
 \paragraph{Preprocessing} To have binary data, the pixel intensities (0-255) were scaled (0-1) and binarized with threshold of 0.5. Another possible way to make data binary is to treat the pixel intensities as probabilities and sample from the given Bernoulli distribution for each pixel. It is also possible to reduce dimensionality by downsizing the pixel size of images - for example to 8x8 (for faster training times). Another preprocessing technique - data 'nudging' can produce several times bigger data by 'shifting' images.
  
@@ -112,7 +117,12 @@ While MSE is quite good and simple indicator of progress of learning, it is not 
 \captionof{figure}{Convergence comparison for different learning rates}  
 \end{center}
 Learning rate of a magnitude between $10^{-2}$ and $10^{-3}$ seems to be optimal. The exact optimal magnitude depends also on the training data size, as tests on larger data sizes have shown (for example for smaller data sizes 0.1 was optimal, while for original sizes of 60000 learning rate of 0.01 was optimal). Additionally, too high learning rate (too high in relation to data size) caused instability and resulted in the reconstruction error increase (which is explained by Hinton \cite{Hinton} as a 'weight explosion'). 
-\par Some research \cite{Tieleman} show that the learning rates used in experiments should not be constant and that in practice, decaying learning rates often work better. Experiment was done with varied learning rate, based on results from previous experiment and convergence observation for different learning rates: starting from 0.1, after 60. epoch decreased by half to 0.05, and after 80. epoch further decreased by an order of magnitude to 0.005. The varied learning rate model was compared with fixed learning rate model. The results are shown on the chart and table below.
+\par Some research \cite{Tieleman} show that the learning rates used in experiments should not be constant and that in practice, decaying learning rates often work better. Experiment was done with varied learning rate, based on results from previous experiment and convergence observation for different learning rates: starting from 0.1, after 60. epoch decreased by half to 0.05, and after 80. epoch further decreased by an order of magnitude to 0.005. The varied learning rate model was compared with fixed learning rate model. The results are shown on the chart below.
+\begin{center}
+\includegraphics[width=14cm]{images/lr_var.png}
+\captionof{figure}{Convergence comparison for different learning rates, including varied}  
+\end{center}
+As it can be observed, decaying learning rate in a way described above does not change the reconstruction error convergence in comparison with the fixed learning rate model with value set to starting learning rate in varied model (dotted line almost overlap with the green one).
 \subsection{The number of hidden units}
 \par The second test was done on number of hidden units. As figure below shows, the higher the number of hidden units, the better convergence of reconstruction error. On the other hand, greater hidden layer size causes longer training time (table).
 \begin{center}
@@ -147,11 +157,16 @@ MSE after 100 epochs & 1.526 & 2.669 & 5.202 & 67.182
 \vspace{1cm}
 Moreover, tests on classification accuracies on 50,000 training cases and 10,000 new cases have shown that size of ten (that is equal to the number of classes) seems to be optimal (see subsection 'Classification'). The ideal case for a mini-batch would be that each sample in it would represent a different class. In other words, each mini-batch should contain one example of each class to reduce the sampling error when estimating the gradient for the whole training set from a single mini-batch \cite{Hinton}. It is possible for datasets that contain a small number of equiprobable classes. However, for the MNIST dataset, the number of samples per each class is different. Therefore it is not possible to divide the data in such a way and preserve the original size of the dataset at the same time. On the other hand MNIST dataset was already randomized, so the samples are not sorted according to the class. Randomizing a dataset along with using minibatches of size about 10 (as advised in \cite{Hinton}) seems to work optimal.
 \subsection{The initial values of the weights and biases}
-The weights are typically initialized to small random values chosen from a zero-mean Gaussian with a standard deviation of about 0.01. Test on initial weights with different initializations showed (see figure) that standard deviation of 0.1 features somehow better reconstruction error reduction that 0.01 and weights initialized to zeros.
+The weights are typically initialized to small random values chosen from a zero-mean Gaussian with a standard deviation of about 0.01. Test on initial weights with different initializations showed (see figure) that standard deviation of 0.1 features somehow better reconstruction error reduction that 0.01 and weights initialized to zeros (with biases set to zeros).
 Moreover starting with different generator numbers does not change the convergence significantly (compare continuous and dotted lines of the same color).
 \begin{center}
 \includegraphics[width=14cm]{images/weights_seeds.png}
 \captionof{figure}{Covergence comparison for different initializations of weights.}  
+\end{center}
+Chart below compares two models (blue and green lines) different in standard deviation of Gaussian, from which small random numbers are chosen for initial weight values. It can be observed that for both cases changing initial biases from small random numbers to zeros does not affect the convergence of reconstruction error (dotted line almost overlap with continuous lines). It also shows that in case biases are not set to zero, it is better to use Gaussian with 0.01 rather than 0.1
+\begin{center}
+\includegraphics[width=14cm]{images/bias.png}
+\captionof{figure}{Covergence comparison for different initializations of biases.}  
 \end{center}
 \subsection{Number of steps for contrastive divergence algorithm}
 All models of $CD_1$, $CD_2$ and $CD_3$ seem to be converging to the similar value, therefore, taking into account performance issues (higher number of contrastive divergence steps means longer training time - see table), it is sufficient to use one-step contrastive divergence algorithm.
@@ -187,7 +202,9 @@ After training process and choice of an optimal model, RBM can be used to show h
 \captionof{figure}{Image reconstructed after training in 500 epochs} 
 \end{minipage}
 \subsection{Classification}
-After tests on model training and hyperparameters choice, classification metrics were computed. The most important metric for classification task is accuracy, that is, the percentage of correct predictions. Accuracy was computed by comparing the label predicted by RBM classifier with the original label on unseen data. Wrong predictions were counted. For the preliminary results, prediction method with target units sampling was used (see first section for method description). Table below shows classification accuracy obtained with this method on 50,000 dataset used for training and 10,000 validation set, for which accuracy was computed). The table shows also main hyper-parameters chosen for training the model.
+After tests on model training and hyperparameters choice, classification metrics were computed. The most important metric for classification task is accuracy, that is, the percentage of correct predictions. Second important metric for accuracy evaluation is confusion matrix, which informs which labels are mixed most often. Other metrics relevant to classification problem include: precision, recall and f-score. The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false positives. The precision is intuitively the ability of the classifier not to label as positive a sample that is negative. The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false negatives. The recall is intuitively the ability of the classifier to find all the positive samples. The F1 score can be interpreted as a weighted average of the precision and recall, where an F1 score reaches its best value at 1 and worst score at 0. The formula for the F1 score is: \newline 
+F1 = 2 * (precision * recall) / (precision + recall)
+\par Accuracy was computed by comparing the label predicted by RBM classifier with the original label on unseen data. Wrong predictions were counted. For the preliminary results, prediction method with target units sampling was used (see first section for method description). Table below shows classification accuracy obtained with this method on 50,000 dataset used for training and 10,000 validation set, for which accuracy was computed). The table shows also main hyper-parameters chosen for training the model.
 \begin{center}
 \hspace{1cm}
 \begin{tabular}{|l||c|c|c|c|} \hline
@@ -216,7 +233,7 @@ RBMs are known to extract features more efficiently on binary data, than on the 
 \section{Discussion}
 Restricted Boltzmann machines are often used as feature extractors or as an initialization step for deep belief networks. They were also successfully used as standalone classifiers. Recent research, such as described in paper \cite{Schmah}, show that both generative and discriminative versions of RBM classification, outperform other 'traditional' classifiers on real-word data. Moreover, discriminative versions of RBMs integrate discovering features of inputs with their use in classification, without relying on a separate classifier, facilitating model selection \cite{Larochelle}. Unsupervised learning (feature discovery) will remain a crucial component in building successful learning algorithms for AI on the grounds of scarcity of labeled examples and availability of many unlabeled. For the second, once a good high-level representation is learned, other learning tasks (e.g., supervised or reinforcement learning) could be much easier \cite{Bengio}.
 \par On the other hand, training RBM on a given dataset requires some practical experience in deciding how to set the values of hyper-parameters such as the learning rate, the momentum, the initial values of weights, the number of hidden units and the size of each mini-batch. It is also useful to know how to monitor the progress of learning and when to terminate the training. There exist no hard guidelines on what decisions should be made in all these aspects. In practice these decisions for each new application are often based on heuristics or trial-and-error approach.  
-%\par Future work on classification with RBM may include following:
+\par Future work on classification with RBM may include implementing a Discriminative RBM as described in \cite{Larochelle}. The model optimizes directly $p(y \vert x)$ instead of merely p(x,y). The exact gradient can be computed efficiently and then used in a stochastic gradient descent optimization. As results on MNIST dataset in \cite{Larochelle} show, this model outperforms RBM modeling joint probabilities, with classification error 1.81\% versus 3.39\% . Further improvement on classification error was observed with Hybrid RBM (1.28\% ), described in the same paper.
 %\begin{itemize}
     %\item data preprocessing techniques: dimensionality reduction by downsizing the pixel size of images (for faster training times), data 'nudging': producing several times bigger data by 'shifting' images
     %\item Training a separate RBM on each class
@@ -228,7 +245,7 @@ Restricted Boltzmann machines are often used as feature extractors or as an init
    \bibitem[2]{Hinton} Hinton, G. (2010) \emph{A Pratical Guide to Training Restricted Boltzmann Machines.} (UTML TR 2010-003)
    \bibitem[3]{Fischer} Fischer, A., Igel, Ch. (2008) \emph{Training Restricted Boltzmann Machines: An Introduction.} 
    \bibitem[4]{Larochelle} Larochelle H., Bengio, Y. (2008) \emph {Classification using Discriminative Restricted Boltzmann Machines} (Proceedings of the 25th International Conference on Machine Learning)
-   \bibitem[5]{Schmah} Schmah T.,Hinton, G., Zemel R., Small S. (2008) \emph {Generative versus discriminative training of RBMs
+   \bibitem[5]{Schmah} Schmah T.,Hinton G., Zemel R., Small S. (2008) \emph {Generative versus discriminative training of RBMs
 for classification of fMRI images} (Conference on Advances in Neural Information Processing Systems 21)
 	\bibitem[6]{Bengio} Bengio Y. (2009) \emph {Learning Deep Architectures for AI} (Foundations and Trends in Machine Learning
 Vol. 2, No. 1 )
