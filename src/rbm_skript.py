@@ -80,7 +80,6 @@ results = []
     visualizations
     :param    returnMSE: boolean value indicating if test run should return mse after training - used for plot function
     :param    plotMSE: boolean value indicating if MSE should be plotted
-    :param    showRec: boolean value indicating if example reconstruction should be displayed
     :param    showFilt: boolean value indicating if filters should be displayed
     
     
@@ -114,7 +113,6 @@ def runTest(
             predictMethod=2,
             returnMSE=False,
             plotMSE=False,
-            showRec=False,
             showFilt=False
             ):
     
@@ -257,7 +255,12 @@ def runTest(
                 if epoch > 0.7 * nrEpochs_p:
                     momentum_p = 0.5   
                 if epoch > 0.9 * nrEpochs_p:
-                    momentum_p = 0.9    
+                    momentum_p = 0.9  
+            if CDk_var:
+                if epoch > 0.6 * nrEpochs_p:
+                    CDk_p = 2   
+                if epoch > 0.8 * nrEpochs_p:
+                    CDk_p =3    
         #perform training based on CD for each minibatch
             for i in range(numOfBatches):
                 #iterate to next batch
@@ -309,42 +312,6 @@ def runTest(
             )
             image.show()
             
-        if showRec:
-            #Do sampling for one case of unseen data
-            for i in train_size:
-                
-            #dataObj.plot(trainX[59999])
-                print "Original label: %d" % trainY[i]
-            #dataObj.plot(validX[9998])
-            #print "Original label: %d" % validY[9998]
-            #validY = dataObj.transformLabel(validY)
-            
-            t2=time()
-            reconstructedY = jRBM1.sample(validX[0], nrOfIter)
-            print reconstructedY
-            #print reconstructedY.argmax(axis=0)
-            sample_time = time() - t2
-            print("Sampling time: %0.3fs" % sample_time) 
-            #dataObj.plot(reconstructedX)
-            label = dataObj.inverseTransformLabel(reconstructedY)
-            #label = reconstructedY.argmax(axis=0)
-            print "Reconstructed label: %d" % label
-            #print "Reconstructed label:"
-            
-            #for i in range(len(reconstructedY)):
-                #if reconstructedY[i] == 1:
-                    #print i
-           
-            reconstructedY = jRBM1.sample(validX[2], nrOfIter)
-            print "Reconstructed label:"
-            print reconstructedY
-            label = dataObj.inverseTransformLabel(reconstructedY)
-            #print label
-            print "Reconstructed label: %d" % label
-            #for i in range(len(reconstructedY)):
-                #if reconstructedY[i] == 1:
-                    #print i
-            
         #Compute classification error   
         print('Performing classification on test data...')
         t3=time()
@@ -365,9 +332,9 @@ def runTest(
                 #print wrongly predicted
                 #print "Reconstrlabel is %f, original label is%f" % (label[i],testY[i]) 
                 #save wrongly predicted
-                scipy.misc.imsave('sample_pictures/wrong_' + str(testY[i]) + 
-                                  '_predicted_as_'+ str(label[i]) +'.png', 
-                                  test_data.reshape(28,28))
+                scipy.misc.imsave('sample_pictures/wrong' + str(counter) +'_' 
+                                  +str(testY[i]) + '_predicted_as_'+ 
+                                  str(label[i]) +'.png', test_data.reshape(28,28))
         err = counter / float(len(label))
         acc = 1 - err
         print "Classification error is %0.3f" % err
@@ -444,20 +411,20 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 """Function that plots and compares MSE for training 
 with a different values for a chosen parameter """   
 def plotResults2(parameter = 'scal', 
-                 val1 = 0.0,
-                 val2 = 0.5,
-                 val3 = 0.9,
-                 val4 = 0.0,
+                 val1 = 1,
+                 val2 = 2,
+                 val3 = 3,
+                 val4 = 1,
                 nr_epochs = 100):
     plt.figure()
-    plt.title('Convergence comparison for different momentum')
-    mswe1 = runTest(momentum_p =val1, nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe1, 'b', label='%0.2f' % val1)
-    mswe2 = runTest(momentum_p=val2, nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe2, 'g', label='%0.2f' % val2)
-    mswe3 = runTest(momentum_p=val3, nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe3, 'r', label='%0.2f' % val3)
-    mswe4 = runTest(momentum_p=val4, momentum_var=True, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.title('Convergence comparison for different CD k-steps')
+    mswe1 = runTest(CDk_p=val1, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe1, 'b', label='%d' % val1)
+    mswe2 = runTest(CDk_p=val2, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe2, 'r', label='%d' % val2)
+    mswe3 = runTest(CDk_p=val3, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe3, 'g', label='%d' % val3)
+    mswe4 = runTest(CDk_p=val4, CDk_var=True, nrEpochs_p = nr_epochs, returnMSE = True)
     plt.plot(mswe4, 'k--', label='varied')
     #mswe4 = runTest(momentum=val4, nrEpochs_p = nr_epochs)
     #plt.plot(mswe4, 'k', label='%d' % val4)
@@ -475,13 +442,13 @@ and compares accuracy and times metrics for the chosen model """
 def compareMetrics():
     names=[]
     for val, name in (
-        (DataType.binary.name, "Binary units"),
-        (DataType.gaussian.name, "Gaussian visible units")):
+        (1, "Sampling target units"),
+        (2, "Computing free energy")):
         #(700, "Hidden units=700")):
         print('=' * 80)
         print(name)
         names.append((name))
-        runTest(dataType =val, train_size = 3000,test_size = 1000)
+        runTest(predictMethod=val, train_size = 5000,test_size = 1000)
     
     # make some plots
     global results
@@ -495,7 +462,7 @@ def compareMetrics():
     predict_time = np.array(predict_time) / np.max(predict_time)
     
     plt.figure(figsize=(12, 8))
-    plt.title("Classification for gaussian and binary values")
+    plt.title("Classification with different prediction methods")
     plt.barh(indices, acc, .2, label="accuracy", color='r')
     plt.barh(indices + .3, train_time, .2, label="train time", color='g')
     plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
