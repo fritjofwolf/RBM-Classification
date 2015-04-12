@@ -2,8 +2,6 @@
 
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
 import scipy
 from data import *
 
@@ -168,6 +166,7 @@ class Joint(RestrictedBoltzmannMachine):
                                             binary=binary,
                                             )
         self.NumOfTargetUnits = numOfTargetUnits
+        self.binary = binary
         #Initialize weights
         # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0.01.
         
@@ -246,13 +245,21 @@ class Joint(RestrictedBoltzmannMachine):
                     hid = hidden
                 else:
                     hid = hiddenRecon
-                #compute visible based on hidden units (reconstruction)
-                for nv in range(self.NumOfVisibleUnits):
-                    #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
-                    if np.random.random() <  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
-                        visibleRecon[nv] = 1
-                    else:
-                        visibleRecon[nv] = 0
+                
+                if self.binary:
+                    #compute visible based on hidden units (reconstruction)
+                    for nv in range(self.NumOfVisibleUnits):
+                        #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
+                        if np.random.random() <  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
+                            visibleRecon[nv] = 1
+                        else:
+                            visibleRecon[nv] = 0
+                #case for gaussian visible units
+                else: 
+                    #compute visible based on hidden units (reconstruction)
+                    for nv in range(self.NumOfVisibleUnits):
+                        #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
+                        visibleRecon[nv] =  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
                         
                 #compute target based on hidden units (reconstruction)
                 for nt in range(self.NumOfTargetUnits):
@@ -299,9 +306,6 @@ class Joint(RestrictedBoltzmannMachine):
         gradientT = (visibleY - targetRecon).mean(axis=0)
         gradientH = (hidden - hiddenRecon).mean(axis=0)   
         
-        #print errorX, error
-	#dataObj = MNIST()
-	#dataObj.plot(visibleX)
         return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
     
     """   

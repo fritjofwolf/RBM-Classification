@@ -2,17 +2,23 @@
 #for different RBM models
 #and different datasets
 
+#### Libraries
+# Standard library
+import os
+from time import time
+# if python < 3.4  -> pip install enum34
+from enum import Enum
+
+# Own library
 from rbm import RestrictedBoltzmannMachine as RBM, Joint as jRBM, BinomialRestrictedBoltzmannMachine as rbmb
 from data import *
 from utils import tile_raster_images
-import os
+
+# Third-party libraries
 import math
 import scipy
 import numpy as np
 from sklearn.metrics import confusion_matrix, classification_report
-from time import time
-# if python < 3.4  -> pip install enum34
-from enum import Enum
 #sudo pip install Pillow
 try:
     import PIL.Image as Image
@@ -45,15 +51,17 @@ results = []
 """
     Runs a test for a given RBM model, dataset (classification problem), 
     specified model hyperparameters and testrun parameters:
-    :param    model: model of RBM to use: 'generative', 'joint' or 'discriminative'
+    dataset parameters
     :param    data: specifies on which dataset to run a test: 'MNIST', 'CIFAR'
+    :param    dataType: specifies data type
     :param    train_data_path: specifies relative path to file with train data
     :param    test_data_path: specifies relative path to file with test data
     :param    dFormat: specifies source data format 'pkl' or 'csv'
     :param    train_size: specifies number of samples from dataset to train 
     :param    test_size: specifies number of samples from dataset to test
-    :param    binary: if binary problem is solved 
     :param    binarizationThreshold - a threshold for binarization of data
+    model parameters
+    :param    model: model of RBM to use: 'generative', 'joint' or 'discriminative'
     :param    batch size: size of minibatch 
     :param    lr: learning rate
     :param    lr_var: boolean value indicating if lr will be varied during learning
@@ -68,26 +76,27 @@ results = []
     :param    momentum_var: boolean value indicating if momentum will be varied during learning
     :param    CDk_p: number of Gibbs step used by contrastive divergence 
     :param    CDk_var: boolean value indicating if k for CD will be varied during learning
-    :param    returnMSE: boolean value indicating if test run should return mse after training
+    :param    predictMethod: 1 - based on sampling target units, 2 - based on free energy computation
+    visualizations
+    :param    returnMSE: boolean value indicating if test run should return mse after training - used for plot function
     :param    plotMSE: boolean value indicating if MSE should be plotted
     :param    showRec: boolean value indicating if example reconstruction should be displayed
     :param    showFilt: boolean value indicating if filters should be displayed
-    :param    predictMethod: 1 - based on sampling target units, 2 - based on free energy computation
+    
     
         ...
 """       
 
 def runTest(
-            model = RBMType.joint.name,
             data = Dataset.MNIST.name,
             train_data_path = 'data/mnist.pkl.gz',
             test_data_path = 'data/mnist_test.csv',
             dataType = DataType.binary.name,
             dFormat = 'pkl',
-            train_size = 10000,
-            test_size = 1000,
-            binary = True,
+            train_size = 100,
+            test_size = 10,
             binarizationThreshold = 0.5,
+            model = RBMType.joint.name,
             batch_size = 10,
             lr = 0.01,
             lr_var = False,
@@ -102,17 +111,22 @@ def runTest(
             momentum_var = False,
             CDk_p=1,
             CDk_var = False,
+            predictMethod=2,
             returnMSE=False,
             plotMSE=False,
             showRec=False,
-            showFilt=False,
-            predictMethod=2):
+            showFilt=False
+            ):
     
     #will modify the global variable
     global results
     # Generate random state to ensure deterministic, repeatable runs
     rnGen = np.random.RandomState(randomState)
     
+    if (dataType == 'binary'):
+        binary=True  
+    else:
+        binary=False
     # Read specified dataset from source files
     print('Reading data...')
     t0=time()
@@ -233,11 +247,17 @@ def runTest(
         while epoch < nrEpochs_p:
             t2 = time()
             epoch += 1
+            #change some parameters while training progresses in varied models
             if lr_var:
-                    if epoch > 0.6 * nrEpochs_p:
-                        lr = lr/10
-                    if epoch > 0.8 * nrEpochs_p:
-                        lr = lr/100
+                if epoch > 0.6 * nrEpochs_p:
+                    lr = lr/10
+                if epoch > 0.8 * nrEpochs_p:
+                    lr = lr/100
+            if momentum_var:
+                if epoch > 0.7 * nrEpochs_p:
+                    momentum_p = 0.5   
+                if epoch > 0.9 * nrEpochs_p:
+                    momentum_p = 0.9    
         #perform training based on CD for each minibatch
             for i in range(numOfBatches):
                 #iterate to next batch
@@ -268,7 +288,7 @@ def runTest(
             #Plot mean squared error on data within epochs
             plt.figure()
             plt.title('Mean squared error for epochs')
-            plt.plot(mEs, 'b', label='Model with varied learning rate')
+            plt.plot(mEs, 'b', label='Model with varied momentum rate')
             plt.legend()
             plt.grid()
             plt.xlabel('Epoch')
@@ -288,8 +308,7 @@ def runTest(
                 )
             )
             image.show()
-
-        
+            
         if showRec:
             #Do sampling for one case of unseen data
             for i in train_size:
@@ -425,21 +444,21 @@ def plotResults(lr1 = 0.5,momentum = 0.5,
 """Function that plots and compares MSE for training 
 with a different values for a chosen parameter """   
 def plotResults2(parameter = 'scal', 
-                 val1 = 0.1,
-                 val2 = 0.01,
-                 #val3 = 0.05,
-                 #val4 = 0.5,
+                 val1 = 0.0,
+                 val2 = 0.5,
+                 val3 = 0.9,
+                 val4 = 0.0,
                 nr_epochs = 100):
     plt.figure()
-    plt.title('Convergence comparison for different bias initializations')
-    mswe1 = runTest(lr =val1, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.title('Convergence comparison for different momentum')
+    mswe1 = runTest(momentum_p =val1, nrEpochs_p = nr_epochs, returnMSE = True)
     plt.plot(mswe1, 'b', label='%0.2f' % val1)
-    mswe2 = runTest(lr=val2, nrEpochs_p = nr_epochs, returnMSE = True)
+    mswe2 = runTest(momentum_p=val2, nrEpochs_p = nr_epochs, returnMSE = True)
     plt.plot(mswe2, 'g', label='%0.2f' % val2)
-    mswe3 = runTest(lr=val1, initBiasZero=True, nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe3, 'b--', label='%0.2f, biases to zero' % val1)
-    mswe4 = runTest(lr=val2, initBiasZero=True,nrEpochs_p = nr_epochs, returnMSE = True)
-    plt.plot(mswe4, 'g--', label='%0.2f, biases to zero' % val2)
+    mswe3 = runTest(momentum_p=val3, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe3, 'r', label='%0.2f' % val3)
+    mswe4 = runTest(momentum_p=val4, momentum_var=True, nrEpochs_p = nr_epochs, returnMSE = True)
+    plt.plot(mswe4, 'k--', label='varied')
     #mswe4 = runTest(momentum=val4, nrEpochs_p = nr_epochs)
     #plt.plot(mswe4, 'k', label='%d' % val4)
 
@@ -456,13 +475,13 @@ and compares accuracy and times metrics for the chosen model """
 def compareMetrics():
     names=[]
     for val, name in (
-        (100, "Hidden units=100"),
-        (400, "Hidden units=400"),
-        (700, "Hidden units=700")):
+        (DataType.binary.name, "Binary units"),
+        (DataType.gaussian.name, "Gaussian visible units")):
+        #(700, "Hidden units=700")):
         print('=' * 80)
         print(name)
         names.append((name))
-        runTest(nrHiddenUnits_p=val)
+        runTest(dataType =val, train_size = 3000,test_size = 1000)
     
     # make some plots
     global results
@@ -476,7 +495,7 @@ def compareMetrics():
     predict_time = np.array(predict_time) / np.max(predict_time)
     
     plt.figure(figsize=(12, 8))
-    plt.title("Classification metrics")
+    plt.title("Classification for gaussian and binary values")
     plt.barh(indices, acc, .2, label="accuracy", color='r')
     plt.barh(indices + .3, train_time, .2, label="train time", color='g')
     plt.barh(indices + .6, predict_time, .2, label="predict time", color='b')
@@ -491,9 +510,9 @@ def compareMetrics():
     
     plt.show()  
 
-runTest();
+#runTest();
 #simpleTest();
 #miscTest();
 #plotResults2()
-#compareMetrics();
+compareMetrics();
 
