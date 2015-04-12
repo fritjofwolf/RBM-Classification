@@ -55,13 +55,15 @@ The aim of the project was to implement Restricted Boltzmann Machines as classif
 \captionof{figure}{Restricted Boltzmann Machines}  
 \end{center} 
 ...
-Hinton \cite{Hinton} describes three approaches to using Restricted Boltzmann Machines for classification task:
+Hinton \cite{Hinton} describes three approaches to use Restricted Boltzmann Machines for classification:
 \begin{itemize}
     \item Using the hidden features learned by the RBM as the inputs for some standard discriminative method
     \item Training a separate RBM on each class
 	\item Training a joint density model using a single RBM
 \end{itemize}
-The first method will not be discussed within this paper. Results from the second approach will be presented in the second section of this paper. The empirical results for the third approach will be described in the third section.
+The first method is a very powerful and promising approach especially when several RBMs are stacked such that the input of the n-th RBM is the output of the (n-1)-th RBM in order to learn more abstract features. These so-called Deep Belief Networks have been widely studied in the both theory and practice, see e.g. (\cite{DeepBelief}), but will not be further discussed in this report. The remainder will focus on the last two methods, which are an at the same time both simple and effective way to use RBMs for classfication. 
+
+Results from the second approach will be presented in the second section of this paper. The empirical results for the third approach will be described in the third section.
 ...
 \subsection{Models}
 \paragraph{Generative RBM}
@@ -91,6 +93,8 @@ Another approach for class prediction is based on computation of free energy \ci
 \subsection{Classification problem}
 \par The main dataset used in the experiments was MNIST dataset of handwritten digit images. The dataset is widely used for training and testing in the field of machine learning. The images are 28 x 28 pixels, and the dataset is divided into 60,000 training cases and 10,000 test cases. The training set is further divided into a training set of 50,000 cases and a validation set of 10,000 cases. The validation set is used to perform model selection and hyper-parameter selection, whereas the test set is used to evaluate the final generalization error and compare different algorithms in an unbiased way.
 \paragraph{Preprocessing} To have binary data, the pixel intensities (0-255) were scaled (0-1) and binarized with threshold of 0.5. Another possible way to make data binary is to treat the pixel intensities as probabilities and sample from the given Bernoulli distribution for each pixel. It is also possible to reduce dimensionality by downsizing the pixel size of images - for example to 8x8 (for faster training times). Another preprocessing technique - data 'nudging' can produce several times bigger data by 'shifting' images.
+ 
+ 
  
 \section{Empirical Results for Discriminative RBM}
 This section describes the empirical results of a RBM trained with joint density model (the third approach of using RBM's for discrimination, described by Hinton \cite{Hinton}).
@@ -254,6 +258,6 @@ the Likelihood Gradient} (ICML 2008))
 for classification of fMRI images} (Conference on Advances in Neural Information Processing Systems 21)
 	\bibitem[6]{Bengio} Bengio Y. (2009) \emph {Learning Deep Architectures for AI} (Foundations and Trends in Machine Learning
 Vol. 2, No. 1 )
-
+	\bibitem[7]{DeepBelief} Hinton G., Osindero S., Yee-Whye T. \emph {A fast learning algorithm for deep belief nets}
 \end{thebibliography}
 \end{document}
