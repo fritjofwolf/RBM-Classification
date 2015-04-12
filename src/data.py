@@ -18,7 +18,8 @@ class MNIST(object):
         self.labelBin = None
 
     """
-    Load MNIST data from pkl file
+    Load MNIST data from pkl file which can be downloaded under
+    http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz
     Returns a tuple containing the training data, validation data, test data
     
     Training data is tuple of two entries
