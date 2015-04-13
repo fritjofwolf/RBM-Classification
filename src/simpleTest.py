@@ -1,13 +1,17 @@
+# Simple script to read the CIFAR dataset, train an binomial RBM on 1 class of it and
+# generate a sample of the learned probability distribution
+
 import rbm_bin as rbmb
 import numpy as np
 import data
 
-bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,300,None)
+
+bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,1000,None)
 data_dict1 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
-data_dict2 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
-data_dict3 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
-data_dict4 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
-data_dict5 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
+data_dict2 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_2')
+data_dict3 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_3')
+data_dict4 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_4')
+data_dict5 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_5')
 examples = np.zeros((50000,3072))
 labels = np.zeros(50000)
 examples[:10000,:] = data_dict1["data"]

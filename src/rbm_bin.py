@@ -1,3 +1,5 @@
+# Class definition of an RBM whose visible units are binomial (with N = 256)
+
 import numpy as np
 import math
 
@@ -86,6 +88,9 @@ class BinomialRestrictedBoltzmannMachine(object):
                 self.HiddenBiases += learningRate * (hidden - hiddenRecon)
                 self.VisibleBiases += learningRate * (visible - visibleRecon)
                 
+		# Variable learning rate should ensure better convergence
+		learningRate *= 0.95
+
                 # Squared-error serves as indicator for the learning progress
                 error = sum(abs(visible-visibleRecon))
                 #print("Hidden biases ", self.HiddenBiases)
