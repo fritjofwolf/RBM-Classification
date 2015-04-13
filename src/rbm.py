@@ -1,11 +1,10 @@
-# Module with Restricted Boltzmann Machines implementations
+# Module with implementation of different models of Restricted Boltzmann Machines
 
 import math
 import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
 import scipy
 import os
+from data import *
 
 def sigmoid(x):
     if x < -100:
@@ -39,9 +38,9 @@ class RestrictedBoltzmannMachine(object):
         #scal: float - sample initial weights from Gaussian distribution (0,scal)
         
         #initialize random number generator
-        #if rnGen is None:
+        if rnGen is None:
             # create a number generator
-            #rnGen = np.random.RandomState(1234)
+            rnGen = np.random.RandomState(1234)
 
         self.NumOfVisibleUnits = numOfVisibleUnits
         self.NumOfHiddenUnits = numOfHiddenUnits
@@ -161,7 +160,7 @@ Overrides train method: uses contrastive divergence algorithm to calculate gradi
 class Joint(RestrictedBoltzmannMachine):
     def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  numOfTargetUnits,
                  rnGen, weightsVH = [], weightsTH = [], 
-                  scal = 0.01, binary = True):
+                  scal = 0.01, binary = True, initBiasZero = False):
         RestrictedBoltzmannMachine.__init__(self, numOfVisibleUnits, 
                                             numOfHiddenUnits,
                                             rnGen = rnGen, 
@@ -169,6 +168,7 @@ class Joint(RestrictedBoltzmannMachine):
                                             binary=binary,
                                             )
         self.NumOfTargetUnits = numOfTargetUnits
+        self.binary = binary
         #Initialize weights
         # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of 0.01.
         
@@ -183,23 +183,17 @@ class Joint(RestrictedBoltzmannMachine):
             #self.WeightsTH = np.random.random([numOfTargetUnits, numOfHiddenUnits])
             self.WeightsTH = scal * np.random.randn(numOfTargetUnits, numOfHiddenUnits)
         
-        
         #Initialize weight, biases to zeros
-        #self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
-        #self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
-        #self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
-        #self.WeightsTH = np.zeros(self.WeightsTH.shape, float)
-        #self.WeightsVH = np.zeros(self.WeightsVH.shape, float)
-
-        #self.NumOfVisibleUnits = numOfVisibleUnits
-        #self.NumOfHiddenUnits = numOfHiddenUnits
-        
-        #Initialize weight, biases to small numbers
-        self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
-        self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)       
-        self.TargetBiases = scal * np.random.randn(numOfTargetUnits)
-        
-    # TODO: ANpassen        
+        if initBiasZero:
+            self.VisibleBiases = np.zeros(self.NumOfVisibleUnits, float)
+            self.HiddenBiases = np.zeros(self.NumOfHiddenUnits, float)
+            self.TargetBiases = np.zeros(self.NumOfHiddenUnits, float)
+        else:
+            #Initialize weight, biases to small numbers
+            self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
+            self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)       
+            self.TargetBiases = scal * np.random.randn(numOfTargetUnits)
+     
     """
     Train the RBM using the contrastive divergence sampling
     Overrides train method of base class, 
@@ -253,13 +247,21 @@ class Joint(RestrictedBoltzmannMachine):
                     hid = hidden
                 else:
                     hid = hiddenRecon
-                #compute visible based on hidden units (reconstruction)
-                for nv in range(self.NumOfVisibleUnits):
-                    #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
-                    if np.random.random() <  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
-                        visibleRecon[nv] = 1
-                    else:
-                        visibleRecon[nv] = 0
+                
+                if self.binary:
+                    #compute visible based on hidden units (reconstruction)
+                    for nv in range(self.NumOfVisibleUnits):
+                        #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
+                        if np.random.random() <  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:])):
+                            visibleRecon[nv] = 1
+                        else:
+                            visibleRecon[nv] = 0
+                #case for gaussian visible units
+                else: 
+                    #compute visible based on hidden units (reconstruction)
+                    for nv in range(self.NumOfVisibleUnits):
+                        #visibleRecon_prob[nv] = sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
+                        visibleRecon[nv] =  sigmoid(self.VisibleBiases[nv] + np.inner(hid,self.WeightsVH[nv,:]))
                         
                 #compute target based on hidden units (reconstruction)
                 for nt in range(self.NumOfTargetUnits):
@@ -306,8 +308,6 @@ class Joint(RestrictedBoltzmannMachine):
         gradientT = (visibleY - targetRecon).mean(axis=0)
         gradientH = (hidden - hiddenRecon).mean(axis=0)   
         
-        #print errorX, error
-
         return gradientWVH, gradientWTH, gradientV, gradientT, gradientH, errorX, errorY
     
     """   
@@ -353,13 +353,6 @@ class Joint(RestrictedBoltzmannMachine):
                     hidden[i] = 1
                 else:
                     hidden[i] = 0
-            """        
-            for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
-                    visibleX[i] = 1
-                else:
-                    visibleX[i] = 0
-           """ 
             for i in range(self.NumOfTargetUnits):
                 if j == numOfIteration-1:
                     visibleY[i] = sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:]))
@@ -371,49 +364,13 @@ class Joint(RestrictedBoltzmannMachine):
         return visibleY  
     
     """
-    Variation of sample methods which tests probability for given data input
-    against given label input
-    returns probabilities
-    """
-    #TODO
-    def sampleAgainst(self,testSampleX, testSampleY, numOfIteration):
-
-        visibleX = testSampleX
-        visibleY = testSampleY
-        hidden = np.zeros((self.NumOfHiddenUnits))
-        # Sample is computed by iteratively computing the activation of hidden and visible units
-        for j in range(numOfIteration):
-            for i in range(self.NumOfHiddenUnits):
-                if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleX,self.WeightsVH[:,i])+ np.inner(visibleY,self.WeightsTH[:,i])):
-                    hidden[i] = 1
-                else:
-                    hidden[i] = 0
-                   
-            for i in range(self.NumOfVisibleUnits):
-                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.WeightsVH[i,:])):
-                    visibleX[i] = 1
-                else:
-                    visibleX[i] = 0
-           
-            for i in range(self.NumOfTargetUnits):
-                if j == numOfIteration-1:
-                    visibleY[i] = sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:]))
-                else:
-                    if np.random.random() < sigmoid(self.TargetBiases[i] + np.inner(hidden, self.WeightsTH[i,:])):
-                        visibleY[i] = 1
-                    else:
-                        visibleY[i] = 0  
-                    
-        return visibleY 
-    
-    """
     Performs classification on given dataset
     uses sample method
     return predicted labels
     """
     def predict(self,testsetX, numOfIteration):
         labels = np.zeros(len(testsetX))
-        print testsetX.shape
+        #print testsetX.shape
         for i in range(len(testsetX)):
             reconY = self.sample(testsetX[i],numOfIteration = numOfIteration)
             #for j in range(len(reconY)):
@@ -422,6 +379,40 @@ class Joint(RestrictedBoltzmannMachine):
                     #print labels[i] 
             #returns label that has the highest prob
             labels[i] = reconY.argmax(axis=0) 
+        return labels
+    
+    # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...") 
+    # Overrides method in the main class     
+    def compute_free_energy(self, visibleX, visibleY):
+        x = np.zeros(len(visibleX))
+        for j in range(self.NumOfHiddenUnits):
+            x[j] = self.HiddenBiases[j] + np.inner(np.transpose(visibleX),self.WeightsVH[:,j])+ np.inner(np.transpose(visibleY),self.WeightsTH[:,j])
+        return (-np.inner(visibleX,self.VisibleBiases) - sum([max(0,x[i]) for i in range(len(x))]))
+    
+    """
+    Performs classification on given dataset
+    uses free energy method (Hinton, p.17)
+    return predicted labels
+    """
+    def predict2(self,testsetX):
+        labels = np.zeros(len(testsetX))
+        #print testsetX.shape
+        for i in range(len(testsetX)):
+            min_fe = 99999
+            label_min_fe=None
+            visibleX = testsetX[i]
+            #for each label
+            for j in range(self.NumOfTargetUnits):
+                visibleY = np.zeros(self.NumOfTargetUnits)
+                visibleY[j] = 1
+                #print visibleY
+                #compute free energy
+                fe = self.compute_free_energy(visibleX, visibleY)
+                if fe < min_fe:
+                    min_fe = fe
+                    label_min_fe = j
+            #returns label with minimal free energy
+            labels[i] = label_min_fe
         return labels
 
 """
@@ -438,18 +429,120 @@ class Discriminative(Joint):
     
     """
     Overrides train method in Joint
+    computes gradient exactly, not by estimation
+    then used in stochastic gradient descent optimization
     """
     def train(self, visibleX, visibleY, learningRate, errorThreshold, k=1, 
         weightDecay='l2', momentum=0.5, stopCondition='epochNumber', 
         nrEpochs=10000):
         pass
+"""    
+Model of a RBM whose visible units are binomial units, i.e. they can 
+model an integer between 0 and N
+"""
+class BinomialRestrictedBoltzmannMachine(object):
+    def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, 
+                 weights = [], scal = 0.01):
+        #Parameters
+        #bin:bool - if visible units are binary or normally distributed
+        #scal: float - sample initial weights from Gaussian distribution (0,scal)
+        
+        #initialize random number generator
+        if rnGen is None:
+            # create a number generator
+            rnGen = np.random.RandomState(1234)
+
+        self.NumOfVisibleUnits = numOfVisibleUnits
+        self.NumOfHiddenUnits = numOfHiddenUnits
+        self.VisibleBiases = scal * np.random.randn(numOfVisibleUnits)
+        self.HiddenBiases = scal * np.random.randn(numOfHiddenUnits)
+        
+        
+        # Initialize weight matrix
+        # Use small random values for the weights chosen from a zero-mean Gaussian with a standard deviation of scal.
+        if weights != []:
+            self.Weights = weights
+        else:
+            #self.Weights = np.random.random([numOfVisibleUnits, numOfHiddenUnits])
+            self.Weights = scal * np.random.randn(numOfVisibleUnits, numOfHiddenUnits)
             
-    """
-    Predicts class number based on input data
-    After training, each possible label is tried in turn with a test vector 
-    and the one that gives lowest free energy is chosen as the most likely class
-    """
-    def predictClass(self, inputData):
-        #TODO
-        label=0
-        return label
+    # Train the RBM using the contrastive divergence algorithm
+    # Input: trainingData - matrix of training examples, where each row represents an example
+    def train(self, trainingData, label, classToTrain, learningRate, errorThreshold, 
+              stopCondition = 'errorThreshold'):
+        print("Start training")            
+        counter = 0
+        error = 10000
+        #results = [[ for i in range(10)] for j in range(10)]
+        # errorThreshold is termination condition
+        while error > errorThreshold:
+            # train RBM only with examples from one class
+                if label[counter] != classToTrain:
+                    counter += 1
+                    counter %= trainingData.shape[0]
+                    continue
+
+                visible = np.transpose(trainingData[counter,:])
+                hidden = np.zeros((self.NumOfHiddenUnits))
+                visibleRecon = np.zeros((self.NumOfVisibleUnits))
+                hiddenRecon = np.zeros((self.NumOfHiddenUnits))
+                
+                # Gibbs-Sampling
+                # Sampling a new state h for the hidden neurons based on p(h|v)
+                for i in range(self.NumOfHiddenUnits):
+                    if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visible,self.Weights[:,i])):
+                        hidden[i] = 1
+                    else:
+                        hidden[i] = 0
+                        
+                # Sampling a new state v for the visible layer based on p(v|h)
+                # Since the visible units are binomial to model an int between 
+                # 0 and 255. The probability p is computed only once and then
+                # the value is computed by simultating 256 units 
+                for i in range(self.NumOfVisibleUnits):
+                    p = sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:]))
+                    #print p
+                    A = np.random.rand(256)
+                    visibleRecon[i] = sum(A <p)
+                    #print(visibleRecon[i],p)
+                for i in range(self.NumOfHiddenUnits):
+                    if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visibleRecon,self.Weights[:,i])):
+                        hiddenRecon[i] = 1
+                    else:
+                        hiddenRecon[i] = 0
+                    
+                # Update weights and biases
+                self.Weights += learningRate * (np.outer(visible,hidden) - np.outer(visibleRecon,hiddenRecon))
+                self.HiddenBiases += learningRate * (hidden - hiddenRecon)
+                self.VisibleBiases += learningRate * (visible - visibleRecon)
+                
+                # Squared-error serves as indicator for the learning progress
+                error = sum(abs(visible-visibleRecon))
+                #print("Hidden biases ", self.HiddenBiases)
+                #print("Visible biases ", self.VisibleBiases)
+                #print("Weights are ", self.Weights)
+                print("Error is ", error)
+                counter += 1
+                counter %= trainingData.shape[0]
+        print("End training")
+    
+    # Computes sample of the learned probability distribution
+    def sample(self,numOfIteration):
+        visible = np.random.randint(0,2,self.NumOfVisibleUnits)
+        hidden = np.zeros((self.NumOfHiddenUnits))
+        # Sample is computed by iteratively computing the activation of hidden and visible units
+        for i in range(numOfIteration):
+            for i in range(self.NumOfHiddenUnits):
+                if np.random.random() < sigmoid(self.HiddenBiases[i] + np.inner(visible,self.Weights[:,i])):
+                    hidden[i] = 1
+                else:
+                    hidden[i] = 0
+                    
+            for i in range(self.NumOfVisibleUnits):
+                if np.random.random() < sigmoid(self.VisibleBiases[i] + np.inner(hidden,self.Weights[i,:])):
+                    visible[i] = 1
+                else:
+                    visible[i] = 0
+                    
+        return visible
+
