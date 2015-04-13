@@ -10,8 +10,9 @@ def sigmoid(x):
 		return 1
 	return 1 / (1 + math.exp(-x))
 	
-# Model of a RBM whose visible units are binomial units, i.e. they can 
-# model an integer between 0 and N
+"""
+Model of an Restricted Boltzmann Machine with binomial units
+"""
 class BinomialRestrictedBoltzmannMachine(object):
 	def __init__(self, numOfVisibleUnits, numOfHiddenUnits,  rnGen, 
 				 weights = [], scal = 0.01):
