@@ -50,12 +50,22 @@ The aim of the project was to implement Restricted Boltzmann Machines as classif
 % some general remarks about topic, what we do and the different sections
 
 
-\section{Restricted Boltzmann Machines}
+\section{Restricted Boltzmann Machines and Contrastive Divergence}
+
+\subsection{Boltzmann Machines}
+
+\subsection{Restricted Boltzmann Machine}
 \begin{center}
 \includegraphics[width=4cm]{images/rbm.png}
 \captionof{figure}{The Restricted Boltzmann Machine architecture. Source: \cite{Krizhevsky}  }
 \end{center} 
-...
+
+\subsection{Contrastive Divergence}
+
+\subsection{RBMs for non-binary data}
+
+\subsection{Restricted Boltzmann Machines for Classification}
+% Todo
 Hinton \cite{Hinton} describes three approaches to using Restricted Boltzmann Machines for classification:
 \begin{itemize}
     \item Using the hidden features learned by the RBM as the inputs for some standard discriminative method
@@ -89,7 +99,9 @@ Model learns joint probability distribution with n-step contrastive divergence (
 \end{center}
 Another approach for class prediction is based on computation of free energy \cite{Hinton}. After training, a test vector is tried with each label, and the one that gives lowest free energy is chosen as the most likely class ('test-against-all-labels' prediction approach for DRBM).
 
-\subsection{The MNIST Dataset}
+
+
+\subsection{The MNIST Dataset} % todo: verschieben
 \begin{minipage}[t]{0.5\textwidth}
 \includegraphics[width=7cm]{images/mnist-example.png}
 \captionof{figure}{Examples from the MNIST dataset, source: \cite{mnist-example}}
@@ -281,7 +293,7 @@ RBMs are known to extract features more efficiently on binary data, than on the 
 
 
 \section{Empirical Results for the CIFAR dataset}
-
+% comment about how to model the dataset using binomial units
 \subsection{The CIFAR Dataset}
 \begin{center}
 \includegraphics[width=4cm]{images/cifar-10.png}
