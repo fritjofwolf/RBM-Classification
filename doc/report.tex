@@ -63,9 +63,9 @@ A Boltzmann machine is a recurrent artificial neural network with stochastic bin
 \end{center}
 Moreover, if we assume the weights and biases to be fixed, then every configuration of the states of visible and hidden units define an energy which is given by:
 \begin{align}
-E(v,h) = - \sum_{i \in visible} a_i*v_i - \sum_{j \in hidden} b_j*h-j - \sum_{i,j} v_i*h_j*w_{ij}
+E(v,h) = - \sum_{i \in visible} a_i*v_i - \sum_{j \in hidden} b_j*h_j - \sum_{i,j} v_i*h_j*w_{ij}
 \end{align}
-where $v, h$ are the bias vectors of the visible and hidden units, respectively. \\
+where $a, b$ are the bias vectors of the visible and hidden units, respectively. \\
 Since there exists no efficient learning algorithm to train a arbitrary connected Boltzmann Machine, the Restricted Boltzmann Machine (RBM) has been proposed. In an RBM every visible unit can be connected to every hidden unit (and vice versa since the connections are symmetric), but no connections between hidden units or visible units are allowed, that means the structure of the network forms a bipartite graph.
 \begin{center}
 \includegraphics[width=5cm]{images/rbm2.png}
