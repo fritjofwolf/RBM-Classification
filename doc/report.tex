@@ -96,7 +96,7 @@ Originally RBMs were developed to deal with binary data, but since there is a lo
 \subsection{Restricted Boltzmann Machines for Classification}
 Although RBM are originally a generative model several ways have been tried out to use them for classification tasks. Hinton \cite{Hinton} describes the following three approaches:
 \begin{itemize}
-    \item Using the hidden features learned by the RBM as the inputs for some standard discriminative method
+    \item Using the hidden features learned by the RBM as the inputs for some standard 				  discriminative method
     \item Training a separate RBM on each class
 	\item Training a joint density model using a single RBM
 \end{itemize}
@@ -105,7 +105,7 @@ The first method is a powerful and promising approach especially when several RB
 \subsubsection{1-RBM-per-Class-Approach}
 % todo
 
-\subsubsection{Discrinative Restricted Boltzmann Machines}
+\subsubsection{Discriminative Restricted Boltzmann Machines}
 Joint density model assumes that RBM has two sets of visible units. Besides the units representing a data vector ({\bfseries x}), there are units representing a label - {\bfseries y}. Label is therefore expressed by binary indicator variables, one of which is set to 1, indicating a particular label (for the case of handwritten images - a particular digit), while the others are set to 0. 
 As a result of two sets of visible units, there are also two sets of weights: between data and hidden units ({\bfseries W}) and between label units and hidden units ({\bfseries U}). 
 \begin{center}
@@ -127,10 +127,10 @@ Another approach for class prediction is based on computation of free energy \ci
 
 
 \subsection{The MNIST Dataset} % todo: verschieben
-\begin{minipage}[t]{0.5\textwidth}
+\begin{center}
 \includegraphics[width=7cm]{images/mnist-example.png}
 \captionof{figure}{Examples from the MNIST dataset, source: \cite{mnist-example}}
-\end{minipage}
+\end{center}
 \par The main dataset used in the experiments was MNIST dataset of handwritten digit images. The dataset is widely used for training and testing in the field of machine learning. The images are 28 x 28 pixels, and the dataset is divided into 60,000 training cases and 10,000 test cases. The training set is further divided into a training set of 50,000 cases and a validation set of 10,000 cases. The validation set is used to perform model selection and hyper-parameter selection, whereas the test set is used to evaluate the final generalization error and compare different algorithms in an unbiased way.
 \paragraph{Preprocessing} For greyscale digit images, pixel values can be interpreted as degrees of blackness on a white background. To make data binary, the pixel intensities (0-255) were scaled (to values between 0 and 1) and then binarized with threshold of 0.5. Another possible way to make data binary is to treat the pixel intensities as probabilities and sample from the given Bernoulli distribution for each pixel. 
 \par It is also possible to reduce dimensionality by downsizing the size of images - for example to 8x8 (for faster training times). Another preprocessing technique - data 'nudging' can generate several times bigger data by 'shifting' images (perturbing the data with linear shifts of 1 pixel in each direction). This way it is possible to learn decent representations from a smaller dataset.
@@ -321,11 +321,14 @@ RBMs are known to extract features more efficiently on binary data, than on the 
 \section{Empirical Results for the CIFAR dataset}
 % comment about how to model the dataset using binomial units
 \subsection{The CIFAR Dataset}
+The CIFAR dataset contains 60000 32x32 color images. There are two different versions of the dataset. In the CIFAR-10 dataset every image has a label from one of 10 classes, e.g. car, airplane or frog. 
 \begin{center}
 \includegraphics[width=4cm]{images/cifar-10.png}
 \captionof{figure}{Examples from the CIFAR dataset Source: \cite{cifar-example}  }
 \end{center} 
-
+This dataset is much more challenging as the MNIST dataset for several reasons. First, it is an color image and it can not be binarized in order to work with a classical RBM. Second, different images of the same class can look very different because the point of view the lightning conditions and the background are not standardized in any way. \\
+To model the data we used 3 binomial units (from 0 to 256) for each of the 1024 pixel of an image. Each of these 3 binomial units models one of the RGB channel of the pixel. So in total we have 3072 visible binomial units (compared to just 784 binary units for MNIST).
+ 
 \newpage
 
 \section{Discussion}
