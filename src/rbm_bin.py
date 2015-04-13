@@ -59,7 +59,7 @@ class BinomialRestrictedBoltzmannMachine(object):
 				if label[counter] != classToTrain:
 					counter += 1
 					continue
-				print(counter)
+				#print(counter)
 				visible = np.transpose(trainingData[counter,:])
 				hidden = np.zeros((self.NumOfHiddenUnits))
 				visibleRecon = np.zeros((self.NumOfVisibleUnits))
