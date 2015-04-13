@@ -6,7 +6,7 @@ import numpy as np
 import data
 
 
-bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,1000,None)
+bRBM = rbmb.BinomialRestrictedBoltzmannMachine(3072,100,None)
 data_dict1 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_1')
 data_dict2 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_2')
 data_dict3 = data.loadCIFAR('./data/cifar-10-batches-py/data_batch_3')
@@ -28,6 +28,6 @@ labels[40000:] = data_dict5["labels"]
 #print labels
 #data.plotCIFAR(examples[0,:])
 print "Data read"
-bRBM.train(examples,labels,labels[0],0.0000001,5)
+bRBM.train(examples[0:500,:],labels[0:500],labels[0],0.000001,5000)
 print "RBM trained"
 data.plot(bRBM.sample(1000))
