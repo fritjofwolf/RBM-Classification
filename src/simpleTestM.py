@@ -5,7 +5,7 @@ import data
 
 mnist = data.MNIST()
 trainingData = mnist.readCSVDataFast(s = 30000)
-learningRate = 0.0005
+learningRate = 0.000005
 numOfHiddenUnits = 1000
 trainedClass = 1
 print "TrainingData loaded"

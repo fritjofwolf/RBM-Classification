@@ -28,6 +28,6 @@ labels[40000:] = data_dict5["labels"]
 #print labels
 #data.plotCIFAR(examples[0,:])
 print "Data read"
-bRBM.train(examples,labels,labels[0],0.1,5)
+bRBM.train(examples,labels,labels[0],0.0000001,5)
 print "RBM trained"
 data.plot(bRBM.sample(1000))
