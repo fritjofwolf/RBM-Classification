@@ -1,10 +1,10 @@
 % Gibt die Klasse des Dokuments an
 \documentclass[a4paper]{scrartcl}
-% passende Kodierung fÄ‚Ä½r deutsche Sonderzeichen
+% passende Kodierung fuer deutsche Sonderzeichen
 %\usepackage[T1]{fontenc}
-% bequemer Eingabezeichensatz(fÄ‚Ä½r Eszett etc.)
+% bequemer Eingabezeichensatz(fuer Eszett etc.)
 \usepackage[utf8]{inputenc}
-% FÄ‚Ä½r align-Umgebung etc.
+% Fuer align-Umgebung etc.
 \usepackage{amsmath, amsthm}
 % For graphics
 \usepackage[pdftex]{graphicx}
@@ -47,8 +47,8 @@ The aim of the project was to implement Restricted Boltzmann Machines as classif
 
 % Textbody
 \section{Introduction}
-Since its invention in 1985 by Hinton and Sejnowski Boltzmann Machines have become a quite popular method. First lacking an efficient training algorithm it was not before the mids 2000, when Hinton et al. proposed the contrastive divergence algorithm for Restricted Boltzmann Machines, that they became the focus of attention. Although they are generative models "by nature" several methods have been developed to use them for classification tasks which was the main focus of this project.
-In the second chapter we will describe the general theory of Restricted Boltzmann Machines and how to use an RBM for classification tasks. Thereafter we will present our experimental results which are about Discriminative RBMs on the MNIST dataset in chapter 3 and RBMs for non-binary data in chapter 4.
+Since its invention in 1985 by Hinton and Sejnowski Boltzmann Machines have become quite a popular method. First lacking an efficient training algorithm it was not before the mids 2000, when Hinton et al. proposed the contrastive divergence algorithm for Restricted Boltzmann Machines, that they became the focus of attention. Although they are generative models "by nature" several methods have been developed to use them for classification tasks, which was the main focus of this project.
+In the second chapter we will describe the general theory of Restricted Boltzmann Machines and how to use an RBM for classification tasks. Thereafter we will present our experimental results about Discriminative RBMs on the MNIST dataset in chapter 3 and RBMs for non-binary data in chapter 4.
 
 \newpage
 
@@ -79,13 +79,12 @@ where $\sigma(x) = \dfrac{1}{1+\exp(-x)}$. Since all connections in the network 
 \begin{align}
 p(v_i = 1|h) = \sigma(a_i + \sum_j h_j*w_{ij}).
 \end{align}
-Restricted Boltzmann Machines are so called generative models, i.e. they are trained in an unsupervised way such that only the data vectors are presented during learning. When the learning was successful, the RBM can produce samples from the model distribution underlying the training data, e.g. when the RBM is trained with a lot of images of the number 2, it should reproduce an image which looks similiar to such a 2.
+Restricted Boltzmann Machines are so called generative models, i.e. they are trained in an unsupervised way such that only the data vectors are presented during learning. When the learning is successful, the RBM can produce samples from the model distribution underlying the training data. In other words, when the RBM is trained with a lot of images of the digit '2', it should reproduce an image which looks similar to such '2'.
 % sampling
 \begin{center}
 \includegraphics[width=12cm]{images/generativeRBM.png}
 \captionof{figure}{Generative model of RBM. Source: \cite{Fischer} }
 \end{center}
-
 
 \subsection{Contrastive Divergence}
 In \cite{Hinton2} Hinton proposed a fast training algorithm for a Restricted Boltzmann Machine called Contrastive Divergence. It uses the fact that a sample of the hidden vector can be easily computed given the visible vector and vice versa. Now the model distribution could be modeled by starting with an arbitrary visible vector and doing a large number of Gibbs sampling. Since this would take a very long time, Hinton showed that it is sufficient to do just n steps of Gibbs sampling for a small number n.
@@ -117,18 +116,24 @@ Although RBMs are originally generative models, several ways have been tried out
 The first method is a powerful and promising approach especially when several RBMs are layered such, that the input of the n-th RBM is the output of the (n-1)-th RBM in order to learn more abstract features. These so-called Deep Belief Networks have been widely studied in the both theory and practice, see e.g. \cite{DeepBelief}, but will not be further discussed in this report. The remainder will focus on the last two methods, which are both simple and effective way to use RBMs for classfication. 
 
 \subsubsection{1-RBM-per-Class-Approach}
-In the second approach a separate RBM is trained on each class with the contrastive divergence algorithm which was mentioned above. Although this seems to be an easy an quite intuitive approach, it has several disadvantages. First, the computational effort is higher especially when there are many different class $K$, e.g. in the CIFAR-100 dataset. This is true for the training and the classification of new images, since in this case one has to compute the energies for all $K$ RBMs. This can be partially compensated by using parallel systems. Second, given a new test vector which should be classified, one cannot use the free energies directly since it holds
+In the second approach a separate RBM is trained on each class with the contrastive divergence algorithm, which was mentioned above. Although this seems to be an easy and quite intuitive approach, it has several disadvantages. First, the computational effort is higher especially when there are many different classes $K$, e.g. in the CIFAR-100 dataset. This is true for the training and the classification of new images, since in this case one has to compute the energies for all $K$ RBMs. This can be partially compensated by using parallel systems. Second, given a new test vector which should be classified, one cannot use the free energies directly since it holds
 \begin{align*}
 log p(t|c) = -F_c(t) - log Z_c
 \end{align*}
-which means that the log-probabilty that a testvector $t$ belongs to a class $c$ is given by the free energy of that vector for the RBM trained on class $c$ and the partition function of this class $c$, which is given by
+which means that the log-probability that a test vector $t$ belongs to a class $c$ is given by the free energy of that vector for the RBM trained on class $c$ and the partition function of this class $c$, which is given by
 \begin{align}
 Z_c = \sum_{v,h} e^{-E_c(v,h)}
 \end{align}
-and cannot computed efficiently. However, it is possible to train a "softmax" model to solve this problem (see \cite{Hinton} p.17).
+and cannot be computed efficiently. However, it is possible to train a "softmax" model to solve this problem (see \cite{Hinton} p.17).
+
+% sampling
+\begin{center}
+\includegraphics[width=12cm]{images/generativeRBM.png}
+\captionof{figure}{Generative model of RBM. Source: \cite{Fischer} }
+\end{center}
 
 
-\subsubsection{Discriminative Restricted Boltzmann Machines}
+\subsubsection{Joint-probability model of Restricted Boltzmann Machines}
 Joint density model assumes that RBM has two sets of visible units. Besides the units representing a data vector ({\bfseries x}), there are units representing a label - {\bfseries y}. Label is therefore expressed by binary indicator variables, one of which is set to 1, indicating a particular label (for the case of handwritten images - a particular digit), while the others are set to 0. 
 As a result of two sets of visible units, there are also two sets of weights: between data and hidden units ({\bfseries W}) and between label units and hidden units ({\bfseries U}). 
 \begin{center}
@@ -171,16 +176,16 @@ While MSE is quite good and simple indicator of progress of learning, it is not 
 \end{minipage}
 \begin{minipage}[t]{0.5\textwidth}
 \begin{center}
-	\includegraphics[width=7cm]{images/filtry_5epoch_50train.png}
+	\includegraphics[width=7cm]{images/filtry_10epoch_50train.png}
 	\vspace{-1em}
-	\captionof{figure}{Learned filters after 5. epoch.}
+	\captionof{figure}{Learned filters after 10. epoch.}
 	\end{center}
 \end{minipage}
 \begin{minipage}[t]{0.5\textwidth}
 	\begin{center}
-	\includegraphics[width=7cm]{images/filtry_10epoch_50train.png}
+	\includegraphics[width=7cm]{images/filtry_100epoch_50train.png}
 	\vspace{-1em}
-	\captionof{figure}{Learned filters after 10. epoch.}
+	\captionof{figure}{Learned filters after 100. epoch.}
 	\end{center}
 \end{minipage}
 \begin{minipage}[t]{0.5\textwidth}
@@ -283,32 +288,21 @@ After training process and choice of an optimal model, RBM can be used to show h
 % first column
 \begin{minipage}[t]{0.5\textwidth}
 \begin{center}
-\includegraphics[width=7cm]{images/0original.png}
+\includegraphics[width=4cm]{images/0original.png}
 \captionof{figure}{Original image.}
 \end{center}
 \end{minipage}
 \begin{minipage}[t]{0.5\textwidth}
 \begin{center}
-\includegraphics[width=7cm]{images/0_reconstructed_momentum00.png}
+\includegraphics[width=4cm]{images/0_reconstructed_momentum00.png}
 \captionof{figure}{Reconstruction after 500 epoch-training .} 
 \end{center}
 \end{minipage}
 \subsection{Classification}
-After tests on model training and hyper-parameters choice, confronting them with best practices described in \cite{Hinton} RBM models were evaluated with classification metrics on the chosen MNIST dataset. The most important metric for classification task is accuracy, that is, the percentage of correct predictions. Second important metric for accuracy evaluation is confusion matrix, which informs which labels are mixed most often. 
-\par Example of confusion matrix is shown on the figure below. The training was performed on 10,000 cases in 100 epochs and testing on 1,000 new cases.
-\begin{center}
-\includegraphics[width=10cm]{images/conf_matrix.png}
-\captionof{figure}{Example of confusion matrix. $C_{i, j}$ is equal to the number of observations known to be in group i but predicted to be in group j. Shows which classes were mixed most often - '3' with '5' and '4' with '9'} 
-\end{center}
-Other metrics relevant to classification problem include: precision, recall and f1-score. The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false positives. The precision is intuitively the ability of the classifier not to label as positive a sample that is negative. The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false negatives. The recall is intuitively the ability of the classifier to find all the positive samples. The F1 score can be interpreted as a weighted average of the precision and recall, where an F1 score reaches its best value at 1 and worst score at 0. The formula for the F1 score is: \newline 
-F1 = 2 * (precision * recall) / (precision + recall)
+After tests on model training and hyper-parameters choice, confronting them with best practices described in \cite{Hinton} RBM models were evaluated with classification metrics on the chosen MNIST dataset. The most important metric for classification task is accuracy, that is, the percentage of correct predictions. 
+\par Accuracy was computed by comparing the label predicted by RBM classifier with the original label on unseen data. Wrong predictions were counted and saved as images along with true and predicted labels.
 
-\begin{center}
-\includegraphics[width=10cm]{images/class_metrics.png}
-\captionof{figure}{Example of classification report with precision, recall and f1-score for each digit class. Computed on 1,000 cases with model trained on 10,000 examples.} 
-\end{center}
-
-\par Accuracy was computed by comparing the label predicted by RBM classifier with the original label on unseen data. Wrong predictions were counted and saved as images along with true and predicted labels. 
+ 
 \paragraph{Method of samling target units} For the preliminary results, prediction method with target units sampling was used (see first section for method description). Table below shows classification accuracy obtained with this method on 50,000 dataset used for training and 10,000 validation set for computing accuracy. The table shows also main hyper-parameters chosen for training the model.
 \begin{center}
 \hspace{1cm}
@@ -333,22 +327,131 @@ Accuracy & Learning rate & Hidden units & Training epoch & Batch Size
 \end{center}
 Tests on classification accuracies on 50,000 training cases and 10,000 new cases have shown that 'mini-batch' size of ten (that is equal to the number of classes) seems to be optimal (see subsection 'Classification'). The ideal case for a mini-batch would be that each sample in it would represent a different class. In other words, each mini-batch should contain one example of each class to reduce the sampling error when estimating the gradient for the whole training set from a single mini-batch \cite{Hinton}. It is possible for datasets that contain a small number of equiprobable classes. However, for the MNIST dataset, the number of samples per each class is different. Therefore it is not possible to divide the data in such a way and preserve the original size of the dataset at the same time. On the other hand MNIST dataset was already randomized, so the samples are not sorted according to the class. Randomizing a dataset along with using minibatches of size about 10 (as advised in \cite{Hinton}) seems to work optimal in terms of classification error.
 
+\par Second important metric for accuracy evaluation is confusion matrix, which informs which labels are mixed most often. 
+\par Example of confusion matrix is shown on the figure below. The training was performed on 10,000 cases in 100 epochs and testing on 1,000 new cases.
+\begin{center}
+\includegraphics[width=9cm]{images/conf_matrix.png}
+\captionof{figure}{Example of confusion matrix. $C_{i, j}$ is equal to the number of observations known to be in group i but predicted to be in group j. Shows which classes were mixed most often - '3' with '5' and '4' with '9'} 
+\end{center}
+\par Visualized examples of confused digits
+\vspace{1em}
+\par
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/3as5_1.png}
+\newline True: 3 \newline Predicted: 5.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/3as5_2.png}
+\newline True: 3 \newline Predicted: 5.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/3as5_3.png}
+\newline True: 3 \newline Predicted: 5.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/3as9.png}
+\newline True: 3 \newline Predicted: 9.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/5as3_1.png}
+\newline True: 5 \newline Predicted: 3.
+\end{center}
+\end{minipage}
+\par
+\vspace{2em}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/4as7.png}
+\newline True: 4 \newline Predicted: 7.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/4as9_1.png}
+\newline True: 4 \newline Predicted: 9.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/4as9_2.png}
+\newline True: 4 \newline Predicted: 9.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/9as4_2.png}
+\newline True: 9 \newline Predicted: 4.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/9as4_1.png}
+\newline True: 9 \newline Predicted: 4.
+\end{center}
+\end{minipage}
+\par
+\vspace{2em}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/5as8_1.png}
+\newline True: 5 \newline Predicted: 8.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/6as0.png}
+\newline True: 6 \newline Predicted: 0.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/6as0_1.png}
+\newline True: 6 \newline Predicted: 0.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/8as2.png}
+\newline True: 8 \newline Predicted: 2.
+\end{center}
+\end{minipage}
+\begin{minipage}[t]{0.2\textwidth}
+\begin{center}
+\includegraphics[width=1.5cm]{images/9as6.png}
+\newline True: 9 \newline Predicted: 6.
+\end{center}
+\end{minipage}
+\vspace{2em}
+\par Other metrics relevant to classification problem include: precision, recall and f1-score. The precision is the ratio tp / (tp + fp) where tp is the number of true positives and fp the number of false positives. The precision is intuitively the ability of the classifier not to label as positive a sample that is negative. The recall is the ratio tp / (tp + fn) where tp is the number of true positives and fn the number of false negatives. The recall is intuitively the ability of the classifier to find all the positive samples. The F1 score can be interpreted as a weighted average of the precision and recall, where an F1 score reaches its best value at 1 and worst score at 0. The formula for the F1 score is: \newline 
+F1 = 2 * (precision * recall) / (precision + recall)
+
+\begin{center}
+\includegraphics[width=12cm]{images/class_metrics.png}
+\captionof{figure}{Example of classification report with precision, recall and f1-score for each digit class. Computed on 1,000 cases with model trained on 10,000 examples.} 
+\end{center}
 \paragraph{Method based on free energy} In the next step, a prediction approach based on free energy computation was tested. Times and accuracy scores were compared with previous approach. This method proved to be incomparably faster and yielded better accuracy results. Instead of performing thousands of sampling iterations for each test vector it basically computes one value (free energy) against each label vector in turn. Therefore, using free energy-based approach is much more beneficial, when the classification problem is confined to small number of classes. 
+The results on classification accuracy with this method along with comparison with the sampling method will be issued as supplement to this report.
 
 \subsection{Different types of unit - Gaussian visible units}
 RBMs are known to extract features more efficiently on binary data, than on the grayscale data. Experiments conducted on gaussian visible units (binarization step of scaled data was omitted) showed that they perform only slightly worse and basically comparably to models with binary units in terms of classification error(89,4\% versus 89,8\% on model trained on 3,000 cases in 100 epochs, tested on 1,000 test data). It was also observed that reconstruction error convergence of gaussian model is better than model with binary units (see linear chart), but seemingly it does not result in better classification performance. As training and prediction time are also comparable it can be concluded that gaussian values can be used for RBM model as well as binary ones. 
-
+\par
+\vspace{1em}
 \begin{minipage}[t]{0.5\textwidth}
-
 \includegraphics[width=7cm]{images/dataTypes.png}
 \captionof{figure}{Reconstruction error convergence comparison between model with gaussian and binary units.} 
-
 \end{minipage}
 \begin{minipage}[t]{0.5\textwidth}
-
 \includegraphics[width=8cm]{images/gaussian_binary.png}
 \captionof{figure}{Classification comparison between models with different data types.}
-
 \end{minipage}
 
 
@@ -356,6 +459,7 @@ RBMs are known to extract features more efficiently on binary data, than on the 
 
 
 \section{Empirical Results for the CIFAR dataset}
+
 \subsection{The CIFAR Dataset}
 The CIFAR dataset contains 60000 32x32 color images. There are two different versions of the dataset. In the CIFAR-10 dataset every image has a label from one of 10 classes, e.g. car, airplane or frog. 
 \begin{center}
@@ -366,17 +470,17 @@ This dataset is much more challenging than the MNIST dataset for several reasons
 To model the data we used 3 binomial units (from 0 to 256) for each of the 1024 pixels of an image. Each of these 3 binomial units models one of the RGB channel of the pixel. So, in total there are 3072 visible binomial units (compared to just 784 binary units for MNIST).
 In order to reduce computation time and have a model which is easier to handle the hidden units are just normal binary units.
 
-\subsection{Monitoring of the Reconstruction error}
-Although the reconstruction error, i.e. the $l_1$-distance between a visible vector and the reconstructed visible vector, can be regarded as the training error of an RBM. Although as in every machine learning setting a low training error is not a sufficient condition for a good generalization performance it is nevertheless a necessary one.
+\subsection{Monitoring of the reconstruction error}
+Although the reconstruction error is actually the $l_1$-distance between a visible vector and the reconstructed visible vector, it can be regarded as the training error of an RBM. And as in every machine learning setting a low training error is not a sufficient condition for a good generalization performance, it is nevertheless a necessary one.
 \begin{center}
 \includegraphics[width=10cm]{images/cifarreconerr.png}
 \captionof{figure}{Monitoring reconstruction error over first epochs}
 \end{center} 
-The figure shows the average reconstruction error over several epochs for different rates.  To keep the computational cost low we only used 50 training examples and 100 hidden units. One can see that the second and third learning rates are too small and the reconstruction error soon reaches equilibrium. A learning rate of 0.001 however gives good results in the long term, although the error first rises. An even higher learning rate did not work well, since then the reconstruction error highly oscillates and no convergence can be observed. 
+Figure shows the average reconstruction error over several epochs. Although it rises first one can see a very clear falling after a few iterations. Since the number of training examples is quite low here, a small number of hidden units is sufficient.
 \subsection{Problems}
 As described above the CIFAR dataset is much more challenging than the MNIST dataset. The most practical problem is the huge computational cost, which comes with a high number of visible and hidden units. The estimated training time for all 50000 images and a sufficiently high number of hidden units (about 1000) would be around 10 days with our computational resources.\\
 Another problem is the correct estimation of the optimal learning rate. Since the images of one class can be quite different and the the reconstruction error is quite high in general (since the visible units take values up to 256), it is highly oscillating when it is computed for every training image. Moreover, the update of the weights and the biases can also vary a lot, which does not allow a convergence in the long term. To solve this problem we computed an average weight and bias update over all training images, which gives a much smoother trend. \\
-Yet another problem is the activation of the hidden units. In the our version of the RBM we implemented no mechanism to promote sparse hidden activity (although this might lead to better classificiation results, see e.g. \cite{Larochelle}), nevertheless the hidden activity seems to get weaker over time, until only around 1 Percent of the hidden units are on.
+Yet another problem is the activation of the hidden units. In our version of the RBM we implemented no mechanism to promote sparse hidden activity (although this might lead to better classificiation results, see e.g. \cite{Larochelle}), nevertheless the hidden activity seems to get weaker over time, until only around 1 \% of the hidden units are on.
 \newpage
 
 \section{Discussion}
@@ -385,7 +489,7 @@ What is more, although RBMs were developed using binary visible and hidden units
 \par On the other hand, training RBM on a given dataset requires some practical experience in deciding how to set the values of hyper-parameters such as the learning rate, the momentum, the initial values of weights, the number of hidden units and the size of each mini-batch. It is also useful to know how to monitor the progress of learning and when to terminate the training. There exist no hard guidelines on what decisions should be made in all these aspects. In practice these decisions for each new application are often based on heuristics or trial-and-error approach. Also, an important factor that must be taken into account when testing RBM models with different hyper-parameters are long times of training the model (for example, on personal computers training and testing on original-size MNIST dataset took days to complete one run). Yet, the models with optimal parameters can be saved for further use. And prediction time for a single case is measured in sub-seconds.
 \par  
 \par Future work on classification with RBM may include implementing a Discriminative RBM as described in \cite{Larochelle}. The model optimizes directly $p(y \vert x)$ instead of merely p(x,y). The exact gradient can be computed efficiently and then used in a stochastic gradient descent optimization. As results on MNIST dataset in \cite{Larochelle} show, this model outperforms RBM modeling joint probabilities, with classification error 1.81\% versus 3.39\% . Further improvement on classification error was observed with Hybrid RBM (1.28\% ), described in the same paper.
-\par Concerning the CIFAR dataset several author, e.g. \cite{cifarpaper}, stated that they also had problems when they only used an RBM as a standalone classifier. The literature shows that deep belief networks might be a better approach to recognize more abstract features and to get better classficiation results in the end.
+\par Concerning the CIFAR dataset, several author, e.g. \cite{Krizhevsky}, stated that they also had problems when they only used an RBM as a standalone classifier. The literature shows that deep belief networks might be a better approach to recognize more abstract features and to get better classficiation results in the end.
 
 \newpage
 
@@ -396,17 +500,16 @@ What is more, although RBMs were developed using binary visible and hidden units
    \bibitem[3]{Fischer} Fischer, A., Igel, Ch. (2008) \emph{Training Restricted Boltzmann 		Machines: An Introduction.} 
    \bibitem[4]{Larochelle} Larochelle H., Bengio, Y. (2008) \emph {Classification using 			Discriminative Restricted Boltzmann Machines} (Proceedings of the 25th International 			Conference on Machine Learning)
    \bibitem[5]{Schmah} Schmah T.,Hinton G., Zemel R., Small S. (2008) \emph{Generative 			versus discriminative training of RBMs
-	for classification of fMRI images} (Conference on Advances in Neural Information 				Processing Systems 21)
-   \bibitem[6]{Bengio} Bengio Y. (2009) \emph {Learning Deep Architectures for AI} 				(Foundations and Trends in Machine Learning
+	for classification of fMRI images} (Conference on Advances in Neural Information Processing Systems 21)
+   \bibitem[6]{Bengio} Bengio Y. (2009) \emph {Learning Deep Architectures for AI} (Foundations and Trends in Machine Learning
 	Vol. 2, No. 1 )
-   \bibitem[7]{Tieleman} Tieleman, T. (2008) \emph{Training Restricted Boltzmann Machines 		using Approximations to
+   \bibitem[7]{Tieleman} Tieleman, T. (2008) \emph{Training Restricted Boltzmann Machines using Approximations to
 	the Likelihood Gradient} (ICML 2008)
-	\bibitem[8]{Krizhevsky} Krizhevsky, A. (2009) \emph{Learning multiple layers of features 	from Tiny Images} (Master thesis, Dept. of Comp.Sci., University of 	Toronto)	
+	\bibitem[8]{Krizhevsky} Krizhevsky, A. (2009) \emph{Learning multiple layers of features from Tiny Images} (Master thesis, Dept. of Comp.Sci., University of 	Toronto)	
    \bibitem[9]{DeepBelief} Hinton G., Osindero S., Yee-Whye T. \emph {A fast learning 			algorithm for deep belief nets}
-   \bibitem[10]{mnist-example} http://andrew.gibiansky.com/blog/machine-learning/k-nearest-		neighbors-simplest-machine-learning/images/mnist-example-ipy.png (12.04.15)
+   \bibitem[10]{mnist-example} http://andrew.gibiansky.com/blog/machine-learning/k-nearest-neighbors-simplest-machine- learning/images/mnist-example-ipy.png (12.04.15)
    \bibitem[11]{cifar-example} https://kaggle2.blob.core.windows.net/competitions/kaggle/3649/media/cifar-10.png (12.04.15)
    \bibitem[12]{boltzmannmachine} http://de.wikipedia.org/wiki/Boltzmann-Maschine (12.04.15)
-   \bibitem[13]{cifarpaper}  Krizhevsky, A. \emph{Learning Multiple Layers of Features from Tiny Images}
 \end{thebibliography}
 
 
