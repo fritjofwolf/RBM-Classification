@@ -5,9 +5,12 @@ import data
 
 mnist = data.MNIST()
 trainingData = mnist.readCSVDataFast(s = 30000)
+learningRate = 0.0005
+numOfHiddenUnits = 1000
+trainedClass = 1
 print "TrainingData loaded"
 #print trainingData
-RBM = [rbm.RestrictedBoltzmannMachine(784,1000,None) for i in range(10)]
+RBM = [rbm.RestrictedBoltzmannMachine(784,numOfHiddenUnits,None) for i in range(10)]
 #print trainingData[:,0]
 #for i in range(10):
 #	mnist.plot(data.binarize(trainingData[i,1:],128))
@@ -15,10 +18,13 @@ RBM = [rbm.RestrictedBoltzmannMachine(784,1000,None) for i in range(10)]
 #print trainingData[trainingData[:,0] == trainedClass,0].shape
 testData = trainingData[29000:,:]
 trainingData2 = trainingData[:29000,:]
+
+print learningRate
+print numOfHiddenUnits
+print trainedClass
 for i in range(1):
-	trainedClass = 2
 	specialTrainingData = trainingData2[trainingData2[:,0] == trainedClass,:]
-	RBM[i].train(data.binarize(specialTrainingData[:,1:],128),specialTrainingData[:,0],trainedClass,0.005,2)
+	RBM[i].train(data.binarize(specialTrainingData[:,1:],128),specialTrainingData[:,0],trainedClass,learningRate,1)
 	print "Training von RBM " + str(i) + " beendet"
 
 # Testing
@@ -33,4 +39,4 @@ for i in range(1):
 		#~ 
 #~ print "Test finished"
 #~ print "Accuracy is: " + str(counter/1000.)
-RBM[0].sample(1000)
+RBM[0].sample(1000,numOfHiddenUnits,learningRate,trainedClass)

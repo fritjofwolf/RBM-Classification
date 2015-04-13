@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 import scipy
-
+import os
 
 def sigmoid(x):
     if x < -100:
@@ -120,7 +120,9 @@ class RestrictedBoltzmannMachine(object):
         print("End training")
     
     # Computes sample of the learned probability distribution
-    def sample(self,numOfIteration):
+    def sample(self,numOfIteration, numOfHiddenUnits, learningRate, trainedClass):
+        if not os.path.exists('./sample_pictures/folder_'+ str(numOfHiddenUnits) + '_' +  str(learningRate) + '_' + str(trainedClass)):
+            os.makedirs('./sample_pictures/folder_'+ str(numOfHiddenUnits) + '_' +  str(learningRate) + '_' + str(trainedClass))
         visible = np.random.randint(0,2,self.NumOfVisibleUnits)
         hidden = np.zeros((self.NumOfHiddenUnits))
         # Sample is computed by iteratively computing the activation of hidden and visible units
@@ -140,7 +142,7 @@ class RestrictedBoltzmannMachine(object):
             visible[visible[:] == 1] = 0
             
             if i % 1 == 0:
-				scipy.misc.imsave('./sample_pictures/foo_' + str(i) + '.png', visible.reshape(28,28))
+				scipy.misc.imsave('./sample_pictures/folder_'+ str(numOfHiddenUnits) + '_' +  str(learningRate) + '_' + str(trainedClass) + '/foo_' + str(numOfHiddenUnits) + '_' +  str(learningRate) + '_' + str(trainedClass) + '_' + str(i) + '.png', visible.reshape(28,28))
         
     # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...")      
     def compute_free_energy(self, visible):
