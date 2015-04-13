@@ -111,13 +111,24 @@ Although RBMs are originally generative models, several ways have been tried out
 The first method is a powerful and promising approach especially when several RBMs are layered such, that the input of the n-th RBM is the output of the (n-1)-th RBM in order to learn more abstract features. These so-called Deep Belief Networks have been widely studied in the both theory and practice, see e.g. \cite{DeepBelief}, but will not be further discussed in this report. The remainder will focus on the last two methods, which are both simple and effective way to use RBMs for classfication. 
 
 \subsubsection{1-RBM-per-Class-Approach}
-% todo
+In the second approach a separate RBM is trained on each class with the contrastive divergence algorithm which was mentioned above. Although this seems to be an easy an quite intuitive approach, it has several disadvantages. First, the computational effort is higher especially when there are many different class $K$, e.g. in the CIFAR-100 dataset. This is true for the training and the classification of new images, since in this case one has to compute the energies for all $K$ RBMs. This can be partially compensated by using parallel systems. Second, given a new test vector which should be classified, one cannot use the free energies directly since it holds
+\begin{align*}
+log p(t|c) = -F_c(t) - log Z_c
+\end{align*}
+which means that the log-probabilty that a testvector $t$ belongs to a class $c$ is given by the free energy of that vector for the RBM trained on class $c$ and the partition function of this class $c$, which is given by
+\begin{align}
+Z_c = \sum_{v,h} e^{-E_c(v,h)}
+\end{align}
+and cannot computed efficiently. However, it is possible to train a "softmax" model to solve this problem (see \cite{Hinton} p.17).
+
 % sampling
 \paragraph{Generative RBM}
 \begin{center}
 \includegraphics[width=12cm]{images/generativeRBM.png}
 \captionof{figure}{Generative model of RBM. Source: \cite{Fischer} }
 \end{center}
+
+
 \subsubsection{Discriminative Restricted Boltzmann Machines}
 Joint density model assumes that RBM has two sets of visible units. Besides the units representing a data vector ({\bfseries x}), there are units representing a label - {\bfseries y}. Label is therefore expressed by binary indicator variables, one of which is set to 1, indicating a particular label (for the case of handwritten images - a particular digit), while the others are set to 0. 
 As a result of two sets of visible units, there are also two sets of weights: between data and hidden units ({\bfseries W}) and between label units and hidden units ({\bfseries U}). 
@@ -346,7 +357,7 @@ RBMs are known to extract features more efficiently on binary data, than on the 
 
 
 \section{Empirical Results for the CIFAR dataset}
-% comment about how to model the dataset using binomial units
+
 \subsection{The CIFAR Dataset}
 The CIFAR dataset contains 60000 32x32 color images. There are two different versions of the dataset. In the CIFAR-10 dataset every image has a label from one of 10 classes, e.g. car, airplane or frog. 
 \begin{center}
@@ -356,6 +367,9 @@ The CIFAR dataset contains 60000 32x32 color images. There are two different ver
 This dataset is much more challenging than the MNIST dataset for several reasons. Firstly, it is a color image and it can not be binarized in order to work with a classical RBM. Secondly, different images of the same class can look very different because the point of view, the lightning conditions and the background are not standardized in any way. \\
 To model the data we used 3 binomial units (from 0 to 256) for each of the 1024 pixels of an image. Each of these 3 binomial units models one of the RGB channel of the pixel. So, in total there are 3072 visible binomial units (compared to just 784 binary units for MNIST).
 In order to reduce computation time and have a model which is easier to handle the hidden units are just normal binary units.
+
+\subsection{Problems}
+
 \newpage
 
 \section{Discussion}
