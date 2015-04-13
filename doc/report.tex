@@ -69,7 +69,7 @@ where $a, b$ are the bias vectors of the visible and hidden units, respectively.
 Since there exists no efficient learning algorithm to train a arbitrary connected Boltzmann Machine, the Restricted Boltzmann Machine (RBM) has been proposed. In an RBM every visible unit can be connected to every hidden unit (and vice versa since the connections are symmetric), but no connections between hidden units or visible units are allowed, that means the structure of the network forms a bipartite graph.
 \begin{center}
 \includegraphics[width=5cm]{images/rbm2.png}
-\captionof{figure}{The Restricted Boltzmann Machine architecture. Source: \cite{Krizhevsky}  }
+\captionof{figure}{The Restricted Boltzmann Machine architecture with bias units. Source: \cite{Krizhevsky}  }
 \end{center} 
 Since there are no direct connections between the hidden units, they are conditional independent given the state of the visible units. The probability is
 \begin{align}
@@ -98,7 +98,10 @@ In the case n = 1 the procedure is the following. Start with a training example 
 \end{align*}
 and for the visible and hidden biases
 \begin{align*}
-\Delta W = \alpha*(v-v_r) \Delta W = \alpha*(h-h_r)
+\Delta W = \alpha*(v-v_r)  
+\end{align*}
+\begin{align*}
+\Delta W = \alpha*(h-h_r)
 \end{align*}
 with an appropriate learning rate $\alpha$ in $\R$.
 
@@ -125,12 +128,6 @@ which means that the log-probability that a test vector $t$ belongs to a class $
 Z_c = \sum_{v,h} e^{-E_c(v,h)}
 \end{align}
 and cannot be computed efficiently. However, it is possible to train a "softmax" model to solve this problem (see \cite{Hinton} p.17).
-
-% sampling
-\begin{center}
-\includegraphics[width=12cm]{images/generativeRBM.png}
-\captionof{figure}{Generative model of RBM. Source: \cite{Fischer} }
-\end{center}
 
 
 \subsubsection{Joint-probability model of Restricted Boltzmann Machines}
@@ -171,7 +168,7 @@ While MSE is quite good and simple indicator of progress of learning, it is not 
 	\begin{center}
 	\includegraphics[width=7cm]{images/filtry_1epoch_50train.png}
 	\vspace{-1em}
-	\captionof{figure}{Learned filters after 1.  epoch.}
+	\captionof{figure}{Learned filters after 1. epoch.}
 	\end{center}
 \end{minipage}
 \begin{minipage}[t]{0.5\textwidth}
@@ -181,6 +178,8 @@ While MSE is quite good and simple indicator of progress of learning, it is not 
 	\captionof{figure}{Learned filters after 10. epoch.}
 	\end{center}
 \end{minipage}
+\vspace{3em}
+\par
 \begin{minipage}[t]{0.5\textwidth}
 	\begin{center}
 	\includegraphics[width=7cm]{images/filtry_100epoch_50train.png}
@@ -444,15 +443,22 @@ The results on classification accuracy with this method along with comparison wi
 \subsection{Different types of unit - Gaussian visible units}
 RBMs are known to extract features more efficiently on binary data, than on the grayscale data. Experiments conducted on gaussian visible units (binarization step of scaled data was omitted) showed that they perform only slightly worse and basically comparably to models with binary units in terms of classification error(89,4\% versus 89,8\% on model trained on 3,000 cases in 100 epochs, tested on 1,000 test data). It was also observed that reconstruction error convergence of gaussian model is better than model with binary units (see linear chart), but seemingly it does not result in better classification performance. As training and prediction time are also comparable it can be concluded that gaussian values can be used for RBM model as well as binary ones. 
 \par
+%\vspace{1em}
+%\begin{minipage}[t]{0.5\textwidth}
+\begin{center}
+\includegraphics[width=10cm]{images/dataTypes.png}
+\vspace{-1em}
+\captionof{figure}{Reconstruction error convergence comparison between model with gaussian and binary units.}
+\end{center} 
+%\end{minipage}
+%\begin{minipage}[t]{0.5\textwidth}
 \vspace{1em}
-\begin{minipage}[t]{0.5\textwidth}
-\includegraphics[width=7cm]{images/dataTypes.png}
-\captionof{figure}{Reconstruction error convergence comparison between model with gaussian and binary units.} 
-\end{minipage}
-\begin{minipage}[t]{0.5\textwidth}
-\includegraphics[width=8cm]{images/gaussian_binary.png}
+\begin{center}
+\includegraphics[width=9cm]{images/gaussian_binary.png}
+\vspace{-1em}
 \captionof{figure}{Classification comparison between models with different data types.}
-\end{minipage}
+\end{center}
+%\end{minipage}
 
 
 \newpage
@@ -463,14 +469,14 @@ RBMs are known to extract features more efficiently on binary data, than on the 
 \subsection{The CIFAR Dataset}
 The CIFAR dataset contains 60000 32x32 color images. There are two different versions of the dataset. In the CIFAR-10 dataset every image has a label from one of 10 classes, e.g. car, airplane or frog. 
 \begin{center}
-\includegraphics[width=4cm]{images/cifar-10.png}
+\includegraphics[width=11cm]{images/cifar_preview.png}
 \captionof{figure}{Examples from the CIFAR dataset Source: \cite{cifar-example}  }
 \end{center} 
 This dataset is much more challenging than the MNIST dataset for several reasons. Firstly, it is a color image and it can not be binarized in order to work with a classical RBM. Secondly, different images of the same class can look very different because the point of view, the lightning conditions and the background are not standardized in any way. \\
 To model the data we used 3 binomial units (from 0 to 256) for each of the 1024 pixels of an image. Each of these 3 binomial units models one of the RGB channel of the pixel. So, in total there are 3072 visible binomial units (compared to just 784 binary units for MNIST).
 In order to reduce computation time and have a model which is easier to handle the hidden units are just normal binary units.
 
-\subsection{Monitoring of the reconstruction error}
+\subsection{Monitoring the reconstruction error}
 Although the reconstruction error is actually the $l_1$-distance between a visible vector and the reconstructed visible vector, it can be regarded as the training error of an RBM. And as in every machine learning setting a low training error is not a sufficient condition for a good generalization performance, it is nevertheless a necessary one.
 \begin{center}
 \includegraphics[width=10cm]{images/cifarreconerr.png}
@@ -480,7 +486,7 @@ Figure shows the average reconstruction error over several epochs. Although it r
 \subsection{Problems}
 As described above the CIFAR dataset is much more challenging than the MNIST dataset. The most practical problem is the huge computational cost, which comes with a high number of visible and hidden units. The estimated training time for all 50000 images and a sufficiently high number of hidden units (about 1000) would be around 10 days with our computational resources.\\
 Another problem is the correct estimation of the optimal learning rate. Since the images of one class can be quite different and the the reconstruction error is quite high in general (since the visible units take values up to 256), it is highly oscillating when it is computed for every training image. Moreover, the update of the weights and the biases can also vary a lot, which does not allow a convergence in the long term. To solve this problem we computed an average weight and bias update over all training images, which gives a much smoother trend. \\
-Yet another problem is the activation of the hidden units. In our version of the RBM we implemented no mechanism to promote sparse hidden activity (although this might lead to better classificiation results, see e.g. \cite{Larochelle}), nevertheless the hidden activity seems to get weaker over time, until only around 1 \% of the hidden units are on.
+Yet another problem is the activation of the hidden units. In our version of the RBM we implemented no mechanism to promote sparse hidden activity (although this might lead to better classificiation results, see e.g. \cite{Larochelle}), nevertheless the hidden activity seems to get weaker over time, until only around 1\% of the hidden units are on.
 \newpage
 
 \section{Discussion}
