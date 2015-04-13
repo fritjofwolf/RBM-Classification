@@ -371,9 +371,13 @@ In order to reduce computation time and have a model which is easier to handle t
 
 \subsection{Monitoring of the Reconstruction error}
 Although the reconstruction error, i.e. the $l_1$-distance between a visible vector and the reconstructed visible vector, can be regarded as the training error of an RBM. Although as in every machine learning setting a low training error is not a sufficient condition for a good generalization performance it is nevertheless a necessary one.
+\begin{center}
+\includegraphics[width=10cm]{images/cifarreconerr.png}
+\captionof{figure}{Monitoring reconstruction error over first epochs}
+\end{center} 
 Figure (todo: paste figure) shows the average reconstruction error over several epochs. Although it rises first one can see a very clear falling after a few iterations. Since the number of training examples is quite low here, a small number of hidden units is sufficient.
 \subsection{Problems}
-As described above the CIFAR dataset is much more challenging than the MNIST dataset. The most practical problem is the huge computational cost, which comes with a high number of visible and hidden units. The estimated training time for all 50000 images and a sufficiently high number of hidden units (> 1000) would be around 10 days with our computational resources.\\
+As described above the CIFAR dataset is much more challenging than the MNIST dataset. The most practical problem is the huge computational cost, which comes with a high number of visible and hidden units. The estimated training time for all 50000 images and a sufficiently high number of hidden units (about 1000) would be around 10 days with our computational resources.\\
 Another problem is the correct estimation of the optimal learning rate. Since the images of one class can be quite different and the the reconstruction error is quite high in general (since the visible units take values up to 256), it is highly oscillating when it is computed for every training image. Moreover, the update of the weights and the biases can also vary a lot, which does not allow a convergence in the long term. To solve this problem we computed an average weight and bias update over all training images, which gives a much smoother trend. \\
 Yet another problem is the activation of the hidden units. In the our version of the RBM we implemented no mechanism to promote sparse hidden activity (although this might lead to better classificiation results, see e.g. \cite{Larochelle}), nevertheless the hidden activity seems to get weaker over time, until only around 1 Percent of the hidden units are on.
 \newpage
