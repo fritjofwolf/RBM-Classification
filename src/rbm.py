@@ -145,7 +145,7 @@ class RestrictedBoltzmannMachine(object):
         
     # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...")      
     def compute_free_energy(self, visible):
-        x = np.zeros(784)
+        x = np.zeros(self.NumOfHiddenUnits)
         for j in range(self.NumOfHiddenUnits):
             x[j] = self.HiddenBiases[j] + np.inner(np.transpose(visible),self.Weights[:,j])
         return (-np.inner(visible,self.VisibleBiases) - sum([max(0,x[i]) for i in range(len(x))]))
@@ -384,7 +384,7 @@ class Joint(RestrictedBoltzmannMachine):
     # Computes the free energy of a given visible vector (formula due to Hinton "Practical Guide ...") 
     # Overrides method in the main class     
     def compute_free_energy(self, visibleX, visibleY):
-        x = np.zeros(len(visibleX))
+        x = np.zeros(self.NumOfHiddenUnits)
         for j in range(self.NumOfHiddenUnits):
             x[j] = self.HiddenBiases[j] + np.inner(np.transpose(visibleX),self.WeightsVH[:,j])+ np.inner(np.transpose(visibleY),self.WeightsTH[:,j])
         return (-np.inner(visibleX,self.VisibleBiases) - sum([max(0,x[i]) for i in range(len(x))]))
